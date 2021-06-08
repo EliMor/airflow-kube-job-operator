@@ -35,7 +35,7 @@ pip install airflow-kube-job-operator
 ```
 
 #### Step 1.5 (Optional) Add Role to your Airflow deployment
-If you want the Jobs to get created without having to bundle your kubeconfig file into your Airflow image, you'll need to give Airflow some extra RBAC permissions to handle Jobs within your cluster.
+If you want the Jobs to get created without having to bundle your kubeconfig file somehow into your Airflow pods, you'll need to give Airflow some extra RBAC permissions to handle Jobs within your cluster.
 
 ** This is needed if you want to use the option ```in_cluster=True``` **
 
