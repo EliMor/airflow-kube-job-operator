@@ -14,7 +14,7 @@ requirements_tests = [
 ]
 
 setup(
-    name="airflow-kubernetes-job-operator",
+    name="airflow-kube-job-operator",
     version=version,
     author="EliMor",
     author_email="elimor.github@gmail.com",

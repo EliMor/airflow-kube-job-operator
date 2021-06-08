@@ -31,7 +31,7 @@ Here are the parameters.
 
 ### Step 1. Install the package
 ```sh
-pip install airflow-kubernetes-job-operator
+pip install airflow-kube-job-operator
 ```
 
 #### Step 1.5 (Optional) Add Role to your Airflow deployment
