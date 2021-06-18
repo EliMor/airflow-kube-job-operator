@@ -7,7 +7,6 @@ from airflow.utils.decorators import apply_defaults
 
 from airflow_kjo.kubernetes_job_launcher import KubernetesJobLauncher
 
-
 class KubernetesJobOperator(BaseOperator):
     """
     Opinionated operator for kubernetes Job type execution.
@@ -20,7 +19,6 @@ class KubernetesJobOperator(BaseOperator):
     :param
     :type yaml_file_name: string
     """
-
     @apply_defaults
     def __init__(
         self,
@@ -34,19 +32,25 @@ class KubernetesJobOperator(BaseOperator):
         config_file=None,
         cluster_context=None,
         # meta config
+        stream_logs=True,
+        log_tail_line_count=100,
         delete_completed_job=False,
         kube_launcher=None,
         **kwargs,
     ):
         super(KubernetesJobOperator, self).__init__(**kwargs)
 
-        self.in_cluster = in_cluster
-        self.config_file = config_file
-        self.cluster_context = cluster_context
         self.yaml_file_name = yaml_file_name
         self.yaml_write_path = yaml_write_path
         self.yaml_write_filename = yaml_write_filename
         self.yaml_template_fields = yaml_template_fields
+        
+        self.in_cluster = in_cluster
+        self.config_file = config_file
+        self.cluster_context = cluster_context
+        self.stream_logs = stream_logs
+        self.log_tail_line_count = log_tail_line_count
+
         self.delete_completed_job = delete_completed_job
         self.kube_launcher = kube_launcher
         if not self.kube_launcher:
@@ -54,6 +58,8 @@ class KubernetesJobOperator(BaseOperator):
                 in_cluster=self.in_cluster,
                 cluster_context=self.cluster_context,
                 config_file=self.config_file,
+                stream_logs=self.stream_logs,
+                log_tail_line_count=self.log_tail_line_count
             )
 
     def _retrieve_template_from_file(self, jinja_env):
@@ -88,6 +94,7 @@ class KubernetesJobOperator(BaseOperator):
         self.kube_launcher.apply(yaml_obj)
         self.kube_launcher.watch(yaml_obj)
         if self.delete_completed_job:
+            logging.info(f'Cleaning up Job')
             self.kube_launcher.delete(yaml_obj)
 
         return rendered_template
