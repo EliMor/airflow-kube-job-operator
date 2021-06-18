@@ -100,6 +100,9 @@ class KubernetesJobLauncher:
             )
             completed = bool(job.status.succeeded)
             if completed:
+                if self.stream_logs:
+                    logging.info(f'Final tail of log for Job {name}')
+                    self._tail_pod_logs(namespace, job)
                 logging.info(f'Job {name} status is Completed')
                 return True
             if running_timeout and total_time > running_timeout:
