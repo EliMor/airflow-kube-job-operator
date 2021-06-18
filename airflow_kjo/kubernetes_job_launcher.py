@@ -5,14 +5,12 @@ from kubernetes.client.rest import ApiException
 
 # https://github.com/kubernetes-client/python/blob/master/kubernetes/docs/BatchV1Api.md
 
-from airflow_kjo.kubernetes_util import get_kube_client, get_kube_job_client
-
+from airflow_kjo.kubernetes_util import get_kube_client, get_kube_job_client, get_kube_pod_client
 
 class KubernetesJobLauncherPodError(Exception):
     """
     Created Job ended in an errored pod state
     """
-
     pass
 
 
@@ -32,6 +30,7 @@ class KubernetesJobLauncher:
         )
 
         self.kube_job_client = get_kube_job_client(self.kube_client)
+        self.kube_pod_client = get_kube_pod_client(self.kube_client)
         self.sleep_time = 5
         self.stream_logs = stream_logs
         self.stream_logs_every = self.sleep_time*6
@@ -57,7 +56,7 @@ class KubernetesJobLauncher:
     def _tail_pod_logs(self, namespace, job):
         num_lines = self.log_tail_line_count
         # get all pods for the job
-        all_pods = self.kube_client.list_namespaced_pod(namespace=namespace)
+        all_pods = self.kube_pod_client.list_namespaced_pod(namespace=namespace)
         job_pods = [] # TODO filter out all_pods
         job_pods = all_pods
         for pod in job_pods:
@@ -67,7 +66,7 @@ class KubernetesJobLauncher:
             logging.info(f'Reading last {num_lines} {lines} from log for pod {pod_name} in namespace {namespace}')
             # TODO should see if can use since_seconds in a good way
             # https://raw.githubusercontent.com/kubernetes-client/python/master/kubernetes/client/api/core_v1_api.py
-            for line in self.kube_client.read_namespaced_pod_log(
+            for line in self.kube_pod_client.read_namespaced_pod_log(
                 name=pod.metadata.name,
                 namespace=namespace,
                 tail_lines=num_lines):
