@@ -64,11 +64,9 @@ class KubernetesJobLauncher:
             logging.info(f'Reading last {num_lines} {lines} from log for pod {pod_name} in namespace {namespace}')
             # TODO should see if can use since_seconds in a good way
             # https://raw.githubusercontent.com/kubernetes-client/python/master/kubernetes/client/api/core_v1_api.py
-            for line in self.kube_pod_client.read_namespaced_pod_log(
-                name=pod.metadata.name,
-                namespace=namespace,
-                tail_lines=num_lines):
-                logging.info(line)
+            lines = [line for line in self.kube_pod_client.read_namespaced_pod_log(name=pod_name, namespace=namespace, tail_lines=num_lines)]
+            str_lines = ''.join(lines)
+            logging.info(lines)
             logging.info(f'End log for {pod_name} in namespace {namespace}')
 
     @tenacity.retry(
