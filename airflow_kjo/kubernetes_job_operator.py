@@ -27,11 +27,12 @@ class KubernetesJobOperator(BaseOperator):
         yaml_write_path=None,
         yaml_write_filename=None,
         yaml_template_fields={},
-        #kube config related params
+        # kube config related params
         in_cluster=None,
         config_file=None,
         cluster_context=None,
         # meta config
+        ## log related
         tail_logs=True,
         tail_log_line_count=100,
         delete_completed_job=False,
