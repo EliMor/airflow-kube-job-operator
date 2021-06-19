@@ -21,7 +21,7 @@ class KubeYamlValidationError(Exception):
 class KubernetesJobLauncher:
     def __init__(
         self, kube_client=None, in_cluster=True, cluster_context=None, config_file=None,
-        tail_logs=False, tail_log_line_count=100, tail_logs_every=None
+        tail_logs_every=None, tail_log_line_count=100, tail_logs_at_end_state_only=False
     ):
         self.kube_client = kube_client or get_kube_client(
             in_cluster=in_cluster,
@@ -32,9 +32,9 @@ class KubernetesJobLauncher:
         self.kube_job_client = get_kube_job_client(self.kube_client)
         self.kube_pod_client = get_kube_pod_client(self.kube_client)
         self.sleep_time = 5
-        self.tail_logs = tail_logs
-        self.tail_logs_every = tail_logs_every if bool(tail_logs_every) else self.sleep_time*6
+        self.tail_logs_every = tail_logs_every
         self.tail_log_line_count = tail_log_line_count
+        self.tail_logs_at_end_state_only = tail_logs_at_end_state_only
 
     @staticmethod
     def _validate_job_yaml(yaml_obj):
@@ -53,8 +53,9 @@ class KubernetesJobLauncher:
         self._validate_job_yaml(yaml_obj)
         return yaml_obj["metadata"]["name"], yaml_obj["metadata"]["namespace"]
 
-    def _tail_pod_logs(self, name, namespace, job, num_lines=None):
+    def _tail_pod_logs(self, name, namespace, job):
         had_logs = False
+        num_lines = self.tail_log_line_count
         # can only get a log if pod is in one of these states
         logable_statuses = {'Running', 'Failed', 'Succeeded'}
         # get all pods for the job
@@ -110,7 +111,7 @@ class KubernetesJobLauncher:
             )
             completed = bool(job.status.succeeded)
             if completed:
-                if self.tail_logs:
+                if bool(self.tail_logs_every) or self.tail_logs_at_end_state_only:
                     logging.info(f'Final log output for Job {name}')
                     self._tail_pod_logs(name, namespace, job)
                 logging.info(f'Job {name} status is Completed')
@@ -119,15 +120,15 @@ class KubernetesJobLauncher:
                 pass  # running timeout exceeded, probably just a warning, would allow task to continue
 
             if bool(job.status.failed):
-                if self.tail_logs:
+                if bool(self.tail_logs_every) or self.tail_logs_at_end_state_only:
                     self._tail_pod_logs(name, namespace, job)
                 raise KubernetesJobLauncherPodError(
                     f"Job {name} in Namespace {namespace} ended in Error state"
                 )
-            if self.tail_logs:
+            if bool(self.tail_logs_every) and not self.tail_logs_at_end_state_only:
                 if total_time > 0 and total_time % (self.tail_logs_every//self.sleep_time) == 0:
                     logging.info(f'Beginning new log dump cycle :: {log_cycles}')
-                    had_logs = self._tail_pod_logs(name, namespace, job, self.tail_log_line_count)
+                    had_logs = self._tail_pod_logs(name, namespace, job)
                     no_logs = ', no logs found to output this cycle' if not had_logs else ''
                     logging.info(f'Log dump cycle {log_cycles} complete{no_logs}')
                     log_cycles += 1

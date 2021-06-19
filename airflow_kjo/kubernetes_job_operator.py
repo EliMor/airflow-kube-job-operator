@@ -34,10 +34,14 @@ class KubernetesJobOperator(BaseOperator):
         # meta config
         ## log related
         tail_logs=False,
-        tail_log_line_count=20,
         tail_logs_every=None,
+        tail_log_line_count=20,
+        ### end_state = (Completed, Error)
+        tail_logs_at_end_state_only=False,
+        ##
         delete_completed_job=False,
         kube_launcher=None,
+        #
         **kwargs,
     ):
         super(KubernetesJobOperator, self).__init__(**kwargs)
@@ -50,10 +54,18 @@ class KubernetesJobOperator(BaseOperator):
         self.in_cluster = in_cluster
         self.config_file = config_file
         self.cluster_context = cluster_context
-
-        self.tail_logs = tail_logs
-        self.tail_log_line_count = tail_log_line_count
+        
+        # set a default cycle time if client wants logs to be tailed but didnt provide a cycle time
+        tail_logs_every = 30 if tail_logs and not bool(tail_logs_every) else tail_logs_every
         self.tail_logs_every = tail_logs_every
+        self.tail_log_line_count = tail_log_line_count
+        self.tail_logs_at_end_state_only = tail_logs_at_end_state_only
+        if tail_logs and self.tail_logs_at_end_state_only:
+            logging.info('Parameter "tail_logs" unnecessary if using "tail_logs_at_end_state_only"')
+
+        if self.tail_logs_at_end_state_only and self.tail_logs_every:
+            parameter_confusion_msg = 'Set either "tail_logs_at_end_state_only" or "tail_logs_every" but not both.'
+            raise ValueError(parameter_confusion_msg)
 
         self.delete_completed_job = delete_completed_job
         self.kube_launcher = kube_launcher
@@ -62,9 +74,9 @@ class KubernetesJobOperator(BaseOperator):
                 in_cluster=self.in_cluster,
                 cluster_context=self.cluster_context,
                 config_file=self.config_file,
-                tail_logs=self.tail_logs,
+                tail_logs_every=self.tail_logs_every,
                 tail_log_line_count=self.tail_log_line_count,
-                tail_logs_every=self.tail_logs_every
+                tail_logs_at_end_state_only=self.tail_logs_at_end_state_only
             )
 
     def _retrieve_template_from_file(self, jinja_env):
