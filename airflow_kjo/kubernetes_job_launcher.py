@@ -54,7 +54,7 @@ class KubernetesJobLauncher:
         return yaml_obj["metadata"]["name"], yaml_obj["metadata"]["namespace"]
 
     def _tail_pod_logs(self, name, namespace, job):
-        num_lines = self.log_tail_line_count
+        num_lines = self.tail_log_line_count
         # can only get a log if pod is in one of these states
         logable_statuses = {'Running', 'Failed', 'Succeeded'}
         # get all pods for the job
