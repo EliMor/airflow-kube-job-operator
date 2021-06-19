@@ -32,8 +32,8 @@ class KubernetesJobOperator(BaseOperator):
         config_file=None,
         cluster_context=None,
         # meta config
-        stream_logs=True,
-        log_tail_line_count=100,
+        tail_logs=True,
+        tail_log_line_count=100,
         delete_completed_job=False,
         kube_launcher=None,
         **kwargs,
@@ -48,8 +48,8 @@ class KubernetesJobOperator(BaseOperator):
         self.in_cluster = in_cluster
         self.config_file = config_file
         self.cluster_context = cluster_context
-        self.stream_logs = stream_logs
-        self.log_tail_line_count = log_tail_line_count
+        self.tail_logs = tail_logs
+        self.tail_log_line_count = tail_log_line_count
 
         self.delete_completed_job = delete_completed_job
         self.kube_launcher = kube_launcher
@@ -58,8 +58,8 @@ class KubernetesJobOperator(BaseOperator):
                 in_cluster=self.in_cluster,
                 cluster_context=self.cluster_context,
                 config_file=self.config_file,
-                stream_logs=self.stream_logs,
-                log_tail_line_count=self.log_tail_line_count
+                tail_logs=self.tail_logs,
+                tail_log_line_count=self.tail_log_line_count
             )
 
     def _retrieve_template_from_file(self, jinja_env):

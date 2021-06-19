@@ -21,7 +21,7 @@ class KubeYamlValidationError(Exception):
 class KubernetesJobLauncher:
     def __init__(
         self, kube_client=None, in_cluster=True, cluster_context=None, config_file=None,
-        stream_logs=False, log_tail_line_count=100
+        tail_logs=False, tail_log_line_count=100
     ):
         self.kube_client = kube_client or get_kube_client(
             in_cluster=in_cluster,
@@ -32,9 +32,9 @@ class KubernetesJobLauncher:
         self.kube_job_client = get_kube_job_client(self.kube_client)
         self.kube_pod_client = get_kube_pod_client(self.kube_client)
         self.sleep_time = 5
-        self.stream_logs = stream_logs
-        self.stream_logs_every = self.sleep_time*6
-        self.log_tail_line_count = log_tail_line_count
+        self.tail_logs = tail_logs
+        self.tail_logs_every = self.sleep_time*6
+        self.tail_log_line_count = tail_log_line_count
 
     @staticmethod
     def _validate_job_yaml(yaml_obj):
@@ -55,11 +55,16 @@ class KubernetesJobLauncher:
 
     def _tail_pod_logs(self, name, namespace, job):
         num_lines = self.log_tail_line_count
+        # can only get a log if pod is in one of these states
+        logable_statuses = {'Running', 'Failed', 'Succeeded'}
         # get all pods for the job
         job_pods = self.kube_pod_client.list_namespaced_pod(namespace=namespace, label_selector=f'job-name={name}')
         for pod in job_pods.items: 
             pod_name = pod.metadata.name
-            logging.info(pod)
+            # only continue if pod is running, completed or errored
+            pod_phase = pod.status.phase
+            if pod_phase not in logable_statuses:
+                continue
             # output the tail of each pod log
             lines = 'line' if num_lines == 1 else 'lines'
             logging.info(f'Reading last {num_lines} {lines} from log for pod {pod_name} in namespace {namespace}')
@@ -96,7 +101,7 @@ class KubernetesJobLauncher:
             )
             completed = bool(job.status.succeeded)
             if completed:
-                if self.stream_logs:
+                if self.tail_logs:
                     logging.info(f'Final tail of log for Job {name}')
                     self._tail_pod_logs(name, namespace, job)
                 logging.info(f'Job {name} status is Completed')
@@ -108,8 +113,8 @@ class KubernetesJobLauncher:
                 raise KubernetesJobLauncherPodError(
                     f"Job {name} in Namespace {namespace} ended in Error state"
                 )
-            if self.stream_logs:
-                if total_time % self.stream_logs_every == 0:
+            if self.tail_logs:
+                if total_time % self.tail_logs_every == 0:
                     logging.info(f'Beginning new log dump cycle :: {log_cycles}')
                     self._tail_pod_logs(name, namespace, job)
                     logging.info(f'Log dump cycle {log_cycles} complete')
