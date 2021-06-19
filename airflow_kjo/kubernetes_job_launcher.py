@@ -53,9 +53,8 @@ class KubernetesJobLauncher:
         self._validate_job_yaml(yaml_obj)
         return yaml_obj["metadata"]["name"], yaml_obj["metadata"]["namespace"]
 
-    def _tail_pod_logs(self, name, namespace, job):
+    def _tail_pod_logs(self, name, namespace, job, num_lines=None):
         had_logs = False
-        num_lines = self.tail_log_line_count
         # can only get a log if pod is in one of these states
         logable_statuses = {'Running', 'Failed', 'Succeeded'}
         # get all pods for the job
@@ -106,7 +105,7 @@ class KubernetesJobLauncher:
             completed = bool(job.status.succeeded)
             if completed:
                 if self.tail_logs:
-                    logging.info(f'Final tail of log for Job {name}')
+                    logging.info(f'Final log output for Job {name}')
                     self._tail_pod_logs(name, namespace, job)
                 logging.info(f'Job {name} status is Completed')
                 return True
@@ -122,7 +121,7 @@ class KubernetesJobLauncher:
             if self.tail_logs:
                 if total_time > 0 and total_time % (self.tail_logs_every//self.sleep_time) == 0:
                     logging.info(f'Beginning new log dump cycle :: {log_cycles}')
-                    had_logs = self._tail_pod_logs(name, namespace, job)
+                    had_logs = self._tail_pod_logs(name, namespace, job, self.tail_log_line_count)
                     no_logs = ', no logs found to output this cycle' if not had_logs else ''
                     logging.info(f'Log dump cycle {log_cycles} complete{no_logs}')
                     log_cycles += 1

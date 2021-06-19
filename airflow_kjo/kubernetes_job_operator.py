@@ -50,6 +50,7 @@ class KubernetesJobOperator(BaseOperator):
         self.in_cluster = in_cluster
         self.config_file = config_file
         self.cluster_context = cluster_context
+
         self.tail_logs = tail_logs
         self.tail_log_line_count = tail_log_line_count
         self.tail_logs_every = tail_logs_every
