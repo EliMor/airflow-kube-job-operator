@@ -44,6 +44,7 @@ def get_kube_job_client(kube_client):
     batch_api = k_client.BatchV1Api(api_client=kube_client)
     return batch_api
 
+
 def get_kube_pod_client(kube_client):
     core_api = k_client.CoreV1Api(api_client=kube_client)
     return core_api

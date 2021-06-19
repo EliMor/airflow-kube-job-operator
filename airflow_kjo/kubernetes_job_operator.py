@@ -7,6 +7,7 @@ from airflow.utils.decorators import apply_defaults
 
 from airflow_kjo.kubernetes_job_launcher import KubernetesJobLauncher
 
+
 class KubernetesJobOperator(BaseOperator):
     """
     Opinionated operator for kubernetes Job type execution.
@@ -26,6 +27,7 @@ class KubernetesJobOperator(BaseOperator):
     :param delete_completed_jobs: should completed jobs be autodeleted
     :param kube_launcher: pass in your own kube launcher if you're testing or brave
     """
+
     @apply_defaults
     def __init__(
         self,
@@ -57,11 +59,11 @@ class KubernetesJobOperator(BaseOperator):
         self.yaml_write_path = yaml_write_path
         self.yaml_write_filename = yaml_write_filename
         self.yaml_template_fields = yaml_template_fields
-        
+
         self.in_cluster = in_cluster
         self.config_file = config_file
         self.cluster_context = cluster_context
-        
+
         # set a default line count and consider case where client only gives the line count
         if not bool(tail_logs_line_count):
             tail_logs_line_count = 20
@@ -69,15 +71,21 @@ class KubernetesJobOperator(BaseOperator):
             if not tail_logs_only_at_end:
                 tail_logs = True
         # set a default cycle time if client wants logs to be tailed but didnt provide a cycle time
-        tail_logs_every = 30 if tail_logs and not bool(tail_logs_every) else tail_logs_every
+        tail_logs_every = (
+            30 if tail_logs and not bool(tail_logs_every) else tail_logs_every
+        )
         self.tail_logs_every = tail_logs_every
         self.tail_logs_line_count = tail_logs_line_count
         self.tail_logs_only_at_end = tail_logs_only_at_end
         if tail_logs and self.tail_logs_only_at_end:
-            logging.info('Parameter "tail_logs" unnecessary if using "tail_logs_only_at_end"')
+            logging.info(
+                'Parameter "tail_logs" unnecessary if using "tail_logs_only_at_end"'
+            )
 
         if self.tail_logs_only_at_end and self.tail_logs_every:
-            parameter_confusion_msg = 'Set either "tail_logs_only_at_end" or "tail_logs_every" but not both.'
+            parameter_confusion_msg = (
+                'Set either "tail_logs_only_at_end" or "tail_logs_every" but not both.'
+            )
             raise ValueError(parameter_confusion_msg)
 
         self.delete_completed_job = delete_completed_job
@@ -89,7 +97,7 @@ class KubernetesJobOperator(BaseOperator):
                 config_file=self.config_file,
                 tail_logs_every=self.tail_logs_every,
                 tail_logs_line_count=self.tail_logs_line_count,
-                tail_logs_only_at_end=self.tail_logs_only_at_end
+                tail_logs_only_at_end=self.tail_logs_only_at_end,
             )
 
     def _retrieve_template_from_file(self, jinja_env):
@@ -124,7 +132,7 @@ class KubernetesJobOperator(BaseOperator):
         self.kube_launcher.apply(yaml_obj)
         self.kube_launcher.watch(yaml_obj)
         if self.delete_completed_job:
-            logging.info(f'Cleaning up Job')
+            logging.info(f"Cleaning up Job")
             self.kube_launcher.delete(yaml_obj)
 
         return rendered_template
