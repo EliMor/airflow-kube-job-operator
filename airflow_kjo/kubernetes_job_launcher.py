@@ -70,9 +70,9 @@ class KubernetesJobLauncher:
             if bool(num_lines):
                 read_log = self.kube_pod_client.read_namespaced_pod_log(name=pod_name, namespace=namespace, tail_lines=num_lines)
                 line_or_lines = 'line' if num_lines == 1 else 'lines'
-                msg = f'Reading last {num_lines} {line_or_lines} from log for pod {pod_name} in namespace {namespace}'
+                msg = f'Reading last {num_lines} {line_or_lines} from log for Pod "{pod_name}" in Namespace "{namespace}"'
             else:
-                msg = f'Reading full logfile for pod {pod_name} in namespace {namespace}'
+                msg = f'Reading full logfile for Pod "{pod_name}" in Namespace "{namespace}"'
                 # could this ever be too much data?
                 read_log = self.kube_pod_client.read_namespaced_pod_log(name=pod_name, namespace=namespace)
             lines = [line for line in read_log]
@@ -80,7 +80,7 @@ class KubernetesJobLauncher:
             if str_lines:
                 logging.info(msg)
                 logging.info(f'Reading....\n{str_lines}')
-                logging.info(f'End log for {pod_name} in namespace {namespace}')
+                logging.info(f'End log for Pod "{pod_name}" in Namespace "{namespace}"')
                 had_logs = True
         return had_logs
 
@@ -111,9 +111,9 @@ class KubernetesJobLauncher:
             completed = bool(job.status.succeeded)
             if completed:
                 if bool(self.tail_logs_every) or self.tail_logs_only_at_end:
-                    logging.info(f'Final log output for Job {name}')
+                    logging.info(f'Final log output for Job "{name}"')
                     self._tail_pod_logs(name, namespace, job)
-                logging.info(f'Job {name} status is Completed')
+                logging.info(f'Job "{name}" status is Completed')
                 return True
             if running_timeout and total_time > running_timeout:
                 pass  # running timeout exceeded, probably just a warning, would allow task to continue
@@ -122,7 +122,7 @@ class KubernetesJobLauncher:
                 if bool(self.tail_logs_every) or self.tail_logs_only_at_end:
                     self._tail_pod_logs(name, namespace, job)
                 raise KubernetesJobLauncherPodError(
-                    f"Job {name} in Namespace {namespace} ended in Error state"
+                    f'Job "{name}" in Namespace "{namespace}" ended in Error state'
                 )
             if bool(self.tail_logs_every) and not self.tail_logs_only_at_end:
                 if total_time > 0 and total_time % (self.tail_logs_every//self.sleep_time) == 0:
