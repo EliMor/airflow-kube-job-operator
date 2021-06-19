@@ -13,7 +13,6 @@ class KubernetesJobLauncherPodError(Exception):
     """
     pass
 
-
 class KubeYamlValidationError(Exception):
     pass
 
@@ -21,7 +20,7 @@ class KubeYamlValidationError(Exception):
 class KubernetesJobLauncher:
     def __init__(
         self, kube_client=None, in_cluster=True, cluster_context=None, config_file=None,
-        tail_logs_every=None, tail_logs_line_count=100, tail_logs_at_end_state_only=False
+        tail_logs_every=None, tail_logs_line_count=100, tail_logs_only_at_end=False
     ):
         self.kube_client = kube_client or get_kube_client(
             in_cluster=in_cluster,
@@ -34,7 +33,7 @@ class KubernetesJobLauncher:
         self.sleep_time = 5
         self.tail_logs_every = tail_logs_every
         self.tail_logs_line_count = tail_logs_line_count
-        self.tail_logs_at_end_state_only = tail_logs_at_end_state_only
+        self.tail_logs_only_at_end = tail_logs_only_at_end
 
     @staticmethod
     def _validate_job_yaml(yaml_obj):
@@ -111,7 +110,7 @@ class KubernetesJobLauncher:
             )
             completed = bool(job.status.succeeded)
             if completed:
-                if bool(self.tail_logs_every) or self.tail_logs_at_end_state_only:
+                if bool(self.tail_logs_every) or self.tail_logs_only_at_end:
                     logging.info(f'Final log output for Job {name}')
                     self._tail_pod_logs(name, namespace, job)
                 logging.info(f'Job {name} status is Completed')
@@ -120,17 +119,17 @@ class KubernetesJobLauncher:
                 pass  # running timeout exceeded, probably just a warning, would allow task to continue
 
             if bool(job.status.failed):
-                if bool(self.tail_logs_every) or self.tail_logs_at_end_state_only:
+                if bool(self.tail_logs_every) or self.tail_logs_only_at_end:
                     self._tail_pod_logs(name, namespace, job)
                 raise KubernetesJobLauncherPodError(
                     f"Job {name} in Namespace {namespace} ended in Error state"
                 )
-            if bool(self.tail_logs_every) and not self.tail_logs_at_end_state_only:
+            if bool(self.tail_logs_every) and not self.tail_logs_only_at_end:
                 if total_time > 0 and total_time % (self.tail_logs_every//self.sleep_time) == 0:
                     logging.info(f'Beginning new log dump cycle :: {log_cycles}')
                     had_logs = self._tail_pod_logs(name, namespace, job)
-                    no_logs = ', no logs found to output this cycle' if not had_logs else ''
-                    logging.info(f'Log dump cycle {log_cycles} complete{no_logs}')
+                    no_logs_msg = ', no logs found to output this cycle' if not had_logs else ''
+                    logging.info(f'Log dump cycle {log_cycles} complete{no_logs_msg}')
                     log_cycles += 1
 
             time.sleep(self.sleep_time)

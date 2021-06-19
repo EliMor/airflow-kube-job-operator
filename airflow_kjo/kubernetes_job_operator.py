@@ -36,8 +36,8 @@ class KubernetesJobOperator(BaseOperator):
         tail_logs=False,
         tail_logs_every=None,
         tail_logs_line_count=20,
-        ### end_state = (Completed, Error)
-        tail_logs_at_end_state_only=False,
+        ### end = (Completed, Error)
+        tail_logs_only_at_end=False,
         ##
         delete_completed_job=False,
         kube_launcher=None,
@@ -59,12 +59,12 @@ class KubernetesJobOperator(BaseOperator):
         tail_logs_every = 30 if tail_logs and not bool(tail_logs_every) else tail_logs_every
         self.tail_logs_every = tail_logs_every
         self.tail_logs_line_count = tail_logs_line_count
-        self.tail_logs_at_end_state_only = tail_logs_at_end_state_only
-        if tail_logs and self.tail_logs_at_end_state_only:
-            logging.info('Parameter "tail_logs" unnecessary if using "tail_logs_at_end_state_only"')
+        self.tail_logs_only_at_end = tail_logs_only_at_end
+        if tail_logs and self.tail_logs_only_at_end:
+            logging.info('Parameter "tail_logs" unnecessary if using "tail_logs_only_at_end"')
 
-        if self.tail_logs_at_end_state_only and self.tail_logs_every:
-            parameter_confusion_msg = 'Set either "tail_logs_at_end_state_only" or "tail_logs_every" but not both.'
+        if self.tail_logs_only_at_end and self.tail_logs_every:
+            parameter_confusion_msg = 'Set either "tail_logs_only_at_end" or "tail_logs_every" but not both.'
             raise ValueError(parameter_confusion_msg)
 
         self.delete_completed_job = delete_completed_job
@@ -76,7 +76,7 @@ class KubernetesJobOperator(BaseOperator):
                 config_file=self.config_file,
                 tail_logs_every=self.tail_logs_every,
                 tail_logs_line_count=self.tail_logs_line_count,
-                tail_logs_at_end_state_only=self.tail_logs_at_end_state_only
+                tail_logs_only_at_end=self.tail_logs_only_at_end
             )
 
     def _retrieve_template_from_file(self, jinja_env):
