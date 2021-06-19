@@ -53,13 +53,11 @@ class KubernetesJobLauncher:
         self._validate_job_yaml(yaml_obj)
         return yaml_obj["metadata"]["name"], yaml_obj["metadata"]["namespace"]
 
-    def _tail_pod_logs(self, namespace, job):
+    def _tail_pod_logs(self, name, namespace, job):
         num_lines = self.log_tail_line_count
         # get all pods for the job
-        all_pods = self.kube_pod_client.list_namespaced_pod(namespace=namespace)
-        job_pods = [] # TODO filter out all_pods
-        job_pods = all_pods
-        for pod in job_pods:
+        job_pods = self.kube_pod_client.list_namespaced_pod(namespace=namespace, label_selector=f'job-name={name}')
+        for pod in job_pods.items: 
             pod_name = pod.metadata.name
             # output the tail of each pod log
             lines = 'line' if num_lines == 1 else 'lines'
@@ -101,7 +99,7 @@ class KubernetesJobLauncher:
             if completed:
                 if self.stream_logs:
                     logging.info(f'Final tail of log for Job {name}')
-                    self._tail_pod_logs(namespace, job)
+                    self._tail_pod_logs(name, namespace, job)
                 logging.info(f'Job {name} status is Completed')
                 return True
             if running_timeout and total_time > running_timeout:
@@ -114,7 +112,7 @@ class KubernetesJobLauncher:
             if self.stream_logs:
                 if total_time % self.stream_logs_every == 0:
                     logging.info(f'Beginning new log dump cycle :: {log_cycles}')
-                    self._tail_pod_logs(namespace, job)
+                    self._tail_pod_logs(name, namespace, job)
                     logging.info(f'Log dump cycle {log_cycles} complete')
                     log_cycles += 1
 
