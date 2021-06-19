@@ -59,6 +59,7 @@ class KubernetesJobLauncher:
         job_pods = self.kube_pod_client.list_namespaced_pod(namespace=namespace, label_selector=f'job-name={name}')
         for pod in job_pods.items: 
             pod_name = pod.metadata.name
+            logging.info(pod)
             # output the tail of each pod log
             lines = 'line' if num_lines == 1 else 'lines'
             logging.info(f'Reading last {num_lines} {lines} from log for pod {pod_name} in namespace {namespace}')
