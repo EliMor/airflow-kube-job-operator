@@ -35,7 +35,7 @@ class KubernetesJobOperator(BaseOperator):
         ## log related
         tail_logs=False,
         tail_logs_every=None,
-        tail_log_line_count=20,
+        tail_logs_line_count=20,
         ### end_state = (Completed, Error)
         tail_logs_at_end_state_only=False,
         ##
@@ -58,7 +58,7 @@ class KubernetesJobOperator(BaseOperator):
         # set a default cycle time if client wants logs to be tailed but didnt provide a cycle time
         tail_logs_every = 30 if tail_logs and not bool(tail_logs_every) else tail_logs_every
         self.tail_logs_every = tail_logs_every
-        self.tail_log_line_count = tail_log_line_count
+        self.tail_logs_line_count = tail_logs_line_count
         self.tail_logs_at_end_state_only = tail_logs_at_end_state_only
         if tail_logs and self.tail_logs_at_end_state_only:
             logging.info('Parameter "tail_logs" unnecessary if using "tail_logs_at_end_state_only"')
@@ -75,7 +75,7 @@ class KubernetesJobOperator(BaseOperator):
                 cluster_context=self.cluster_context,
                 config_file=self.config_file,
                 tail_logs_every=self.tail_logs_every,
-                tail_log_line_count=self.tail_log_line_count,
+                tail_logs_line_count=self.tail_logs_line_count,
                 tail_logs_at_end_state_only=self.tail_logs_at_end_state_only
             )
 

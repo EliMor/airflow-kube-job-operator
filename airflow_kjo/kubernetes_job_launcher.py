@@ -21,7 +21,7 @@ class KubeYamlValidationError(Exception):
 class KubernetesJobLauncher:
     def __init__(
         self, kube_client=None, in_cluster=True, cluster_context=None, config_file=None,
-        tail_logs_every=None, tail_log_line_count=100, tail_logs_at_end_state_only=False
+        tail_logs_every=None, tail_logs_line_count=100, tail_logs_at_end_state_only=False
     ):
         self.kube_client = kube_client or get_kube_client(
             in_cluster=in_cluster,
@@ -33,7 +33,7 @@ class KubernetesJobLauncher:
         self.kube_pod_client = get_kube_pod_client(self.kube_client)
         self.sleep_time = 5
         self.tail_logs_every = tail_logs_every
-        self.tail_log_line_count = tail_log_line_count
+        self.tail_logs_line_count = tail_logs_line_count
         self.tail_logs_at_end_state_only = tail_logs_at_end_state_only
 
     @staticmethod
@@ -55,7 +55,7 @@ class KubernetesJobLauncher:
 
     def _tail_pod_logs(self, name, namespace, job):
         had_logs = False
-        num_lines = self.tail_log_line_count
+        num_lines = self.tail_logs_line_count
         # can only get a log if pod is in one of these states
         logable_statuses = {'Running', 'Failed', 'Succeeded'}
         # get all pods for the job
