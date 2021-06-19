@@ -69,13 +69,16 @@ class KubernetesJobLauncher:
             # https://raw.githubusercontent.com/kubernetes-client/python/master/kubernetes/client/api/core_v1_api.py
             if bool(num_lines):
                 read_log = self.kube_pod_client.read_namespaced_pod_log(name=pod_name, namespace=namespace, tail_lines=num_lines)
+                line_or_lines = 'line' if num_lines == 1 else 'lines'
+                msg = f'Reading last {num_lines} {line_or_lines} from log for pod {pod_name} in namespace {namespace}'
             else:
+                msg = f'Reading full logfile for pod {pod_name} in namespace {namespace}'
+                # could this ever be too much data?
                 read_log = self.kube_pod_client.read_namespaced_pod_log(name=pod_name, namespace=namespace)
             lines = [line for line in read_log]
             str_lines = ''.join(lines).strip()
             if str_lines:
-                line_or_lines = 'line' if num_lines == 1 else 'lines'
-                logging.info(f'Reading last {num_lines} {line_or_lines} from log for pod {pod_name} in namespace {namespace}')
+                logging.info(msg)
                 logging.info(f'Reading....\n{str_lines}')
                 logging.info(f'End log for {pod_name} in namespace {namespace}')
                 had_logs = True
