@@ -307,6 +307,49 @@ In this situation it may be useful to have Airflow write out the rendered yaml f
 ```
 It could be very useful to have an NFS to share the same filestore across pods for writing these rendered yaml files out. 
 
+## Logging
+
+Let's talk about logging. 
+
+If you're using Kubernetes you should have a logging solution of some sort to aggregate and provide searchability of all your logs. However, we recognize that it's very useful to have Airflow itself capture logs from your pods. So here are some use cases for forwarding the logs using the KJO.
+
+    1. I just want a simple tail of the logs, I don't care about extra behavior configuration
+    2. I only want logs tailed out when the pods are in an end state; Completed, Errored
+    3. I want to specify how many lines are tailed out and how frequently its tailed out 
+
+
+1. Add 'tail_logs' to our task from above.
+```python
+    task_1 = KubernetesJobOperator(task_id='example_kubernetes_job_operator',
+                                   yaml_file_name='countdown_body.yaml.tmpl',
+                                   yaml_template_fields={'command': command},
+                                   in_cluster=True,
+                                   tail_logs=True)
+```
+
+2. Add 'tail_logs_only_at_end' to our task from above.
+```python
+    task_1 = KubernetesJobOperator(task_id='example_kubernetes_job_operator',
+                                   yaml_file_name='countdown_body.yaml.tmpl',
+                                   yaml_template_fields={'command': command},
+                                   in_cluster=True,
+                                   tail_logs_only_at_end=True)
+```
+
+There is no need to have 'tail_logs' and 'tail_logs_only_at_end' together, 'tail_logs_only_at_end' takes priority. 
+
+3. Configure the behavior of the log tail
+```python
+    task_1 = KubernetesJobOperator(task_id='example_kubernetes_job_operator',
+                                   yaml_file_name='countdown_body.yaml.tmpl',
+                                   yaml_template_fields={'command': command},
+                                   in_cluster=True,
+                                   tail_logs_every=60, # seconds
+                                   tail_logs_line_count=100)
+```
+
+There is no need to include 'tail_logs' since there are other 'tail_logs_' parameters set.
+This could get to be quite noisy so be mindful of your particular use case.
 
 ## Notes....
 
