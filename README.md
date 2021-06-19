@@ -25,7 +25,7 @@ Here are the parameters.
 | yaml_write_filename | If you want the rendered yaml file written, what is the filename? | str |
 | yaml_template_fields | If you have variables in your yaml file you want filled out | dict 
 | in_cluster | Whether or not Airflow has cluster permissions to create and manage Jobs | bool |
-| tail_logs | Output tail logs of the pods to airflow | bool |
+| tail_logs | Whether to output tail logs of the pods to airflow | bool |
 | tail_log_line_count | num of lines from end to output | int |
 | config_file | The path to the kube configfile | str |
 | cluster_context | If you using a config file include the cluster context | str |
