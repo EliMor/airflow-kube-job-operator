@@ -315,7 +315,7 @@ If you're using Kubernetes you should have a logging solution of some sort to ag
 
     1. I just want a simple tail of the logs, I don't care about extra behavior configuration
     2. I only want logs tailed out when the pods are in an end state; Completed, Errored
-    3. I want to specify how many lines are tailed out and how frequently its tailed out 
+    3. I want to specify how many lines are tailed out and/or how frequently its tailed out 
 
 
 1. Add 'tail_logs' to our task from above.
