@@ -13,11 +13,18 @@ class KubernetesJobOperator(BaseOperator):
     Only allow client to pass in yaml files
 
     :param yaml_file_name: name of yaml file to be executed
+    :param yaml_write_path:
+    :param yaml_write_filename:
+    :param yaml_template_fields:
     :param in_cluster: whether to use rbac inside the cluster rather than a config file
     :param config_file: a kube config file filename
     :param cluster_context: context to use referenced in the kube config file
-    :param
-    :type yaml_file_name: string
+    :param tail_logs: should logs be output, has some default behavior for simple usage
+    :param tail_logs_every: frequency to output logs
+    :param tail_logs_line_count: num lines from end to output
+    :param tail_logs_only_at_end: should logs only output if job ended in complete/error
+    :param delete_completed_jobs: should completed jobs be autodeleted
+    :param kube_launcher: pass in your own kube launcher if you're testing or brave
     """
     @apply_defaults
     def __init__(
