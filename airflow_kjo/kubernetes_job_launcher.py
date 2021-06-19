@@ -111,11 +111,13 @@ class KubernetesJobLauncher:
                 pass  # running timeout exceeded, probably just a warning, would allow task to continue
 
             if bool(job.status.failed):
+                if self.tail_logs:
+                    self._tail_pod_logs(name, namespace, job)
                 raise KubernetesJobLauncherPodError(
                     f"Job {name} in Namespace {namespace} ended in Error state"
                 )
             if self.tail_logs:
-                if total_time % self.tail_logs_every == 0:
+                if total_time > 0 and total_time % self.tail_logs_every == 0:
                     logging.info(f'Beginning new log dump cycle :: {log_cycles}')
                     self._tail_pod_logs(name, namespace, job)
                     logging.info(f'Log dump cycle {log_cycles} complete')
