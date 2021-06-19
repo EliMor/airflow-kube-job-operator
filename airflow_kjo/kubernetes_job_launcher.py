@@ -21,7 +21,7 @@ class KubeYamlValidationError(Exception):
 class KubernetesJobLauncher:
     def __init__(
         self, kube_client=None, in_cluster=True, cluster_context=None, config_file=None,
-        tail_logs=False, tail_log_line_count=100
+        tail_logs=False, tail_log_line_count=100, tail_logs_every=None
     ):
         self.kube_client = kube_client or get_kube_client(
             in_cluster=in_cluster,
@@ -33,7 +33,7 @@ class KubernetesJobLauncher:
         self.kube_pod_client = get_kube_pod_client(self.kube_client)
         self.sleep_time = 5
         self.tail_logs = tail_logs
-        self.tail_logs_every = self.sleep_time*6
+        self.tail_logs_every = tail_logs_every if bool(tail_logs_every) else self.sleep_time*6
         self.tail_log_line_count = tail_log_line_count
 
     @staticmethod
@@ -120,11 +120,11 @@ class KubernetesJobLauncher:
                     f"Job {name} in Namespace {namespace} ended in Error state"
                 )
             if self.tail_logs:
-                if total_time > 0 and total_time % self.tail_logs_every == 0:
+                if total_time > 0 and total_time % (self.tail_logs_every//self.sleep_time) == 0:
                     logging.info(f'Beginning new log dump cycle :: {log_cycles}')
                     had_logs = self._tail_pod_logs(name, namespace, job)
-                    extra = ', no logs found to stream this cycle' if not had_logs else ''
-                    logging.info(f'Log dump cycle {log_cycles} complete{extra}')
+                    no_logs = ', no logs found to output this cycle' if not had_logs else ''
+                    logging.info(f'Log dump cycle {log_cycles} complete{no_logs}')
                     log_cycles += 1
 
             time.sleep(self.sleep_time)

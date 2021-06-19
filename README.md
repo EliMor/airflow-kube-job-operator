@@ -27,6 +27,7 @@ Here are the parameters.
 | in_cluster | Whether or not Airflow has cluster permissions to create and manage Jobs | bool |
 | tail_logs | Whether to output tail logs of the pods to airflow | bool |
 | tail_log_line_count | num of lines from end to output | int |
+| tail_logs_every | every x seconds to wait to begin a new log dump (nearest 5 sec) | int |
 | config_file | The path to the kube configfile | str |
 | cluster_context | If you using a config file include the cluster context | str |
 | delete_completed_job | Autodelete Jobs that completed without errors | bool |
