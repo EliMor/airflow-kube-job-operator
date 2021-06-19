@@ -66,13 +66,13 @@ class KubernetesJobLauncher:
             if pod_phase not in logable_statuses:
                 continue
             # output the tail of each pod log
-            lines = 'line' if num_lines == 1 else 'lines'
+            line_or_lines = 'line' if num_lines == 1 else 'lines'
             # TODO should see if can use since_seconds in a good way
             # https://raw.githubusercontent.com/kubernetes-client/python/master/kubernetes/client/api/core_v1_api.py
             lines = [line for line in self.kube_pod_client.read_namespaced_pod_log(name=pod_name, namespace=namespace, tail_lines=num_lines)]
             str_lines = ''.join(lines).strip()
             if str_lines:
-                logging.info(f'Reading last {num_lines} {lines} from log for pod {pod_name} in namespace {namespace}')
+                logging.info(f'Reading last {num_lines} {line_or_lines} from log for pod {pod_name} in namespace {namespace}')
                 logging.info(f'Reading....\n{str_lines}')
                 logging.info(f'End log for {pod_name} in namespace {namespace}')
 

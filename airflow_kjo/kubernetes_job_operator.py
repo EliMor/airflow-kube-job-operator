@@ -33,7 +33,7 @@ class KubernetesJobOperator(BaseOperator):
         cluster_context=None,
         # meta config
         ## log related
-        tail_logs=True,
+        tail_logs=False,
         tail_log_line_count=100,
         delete_completed_job=False,
         kube_launcher=None,
