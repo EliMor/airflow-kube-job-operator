@@ -327,6 +327,8 @@ If you're using Kubernetes you should have a logging solution of some sort to ag
                                    tail_logs=True)
 ```
 
+If any of the below are set, 'tail_logs' does not need to be set.
+
 2. Add 'tail_logs_only_at_end' to our task from above.
 ```python
     task_1 = KubernetesJobOperator(task_id='example_kubernetes_job_operator',
@@ -335,8 +337,6 @@ If you're using Kubernetes you should have a logging solution of some sort to ag
                                    in_cluster=True,
                                    tail_logs_only_at_end=True)
 ```
-
-There is no need to have 'tail_logs' and 'tail_logs_only_at_end' together, 'tail_logs_only_at_end' takes priority. 
 
 3. Configure the behavior of the log tail
 ```python
@@ -348,7 +348,6 @@ There is no need to have 'tail_logs' and 'tail_logs_only_at_end' together, 'tail
                                    tail_logs_line_count=100)
 ```
 
-There is no need to include 'tail_logs' since there are other 'tail_logs_' parameters set.
 This could get to be quite noisy so be mindful of your particular use case.
 
 ## Notes....
