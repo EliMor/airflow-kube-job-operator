@@ -4,7 +4,7 @@
 Airflow currently has a KubernetesPodOperator to kick off and manage pods. This is an excellent starting point but we wanted to achieve a few more things...
 
 1. We thought the writer of the Dag should not have to ever mess with the details of the python kubernetes package, creating python objects to render in kubernetes quickly gets too messy!
-2. We wanted an extension of how Airflow uses Jinja to be able to apply it to kubernetes yaml files. In other words, developers should be able to write yaml files as templates they could resuse across tasks or dags
+2. We wanted an extension of how Airflow uses Jinja to be able to apply it to kubernetes yaml files. In other words, developers should be able to write yaml files as templates they could reuse across tasks or dags
 3. For Airflow, the Kubernetes Job type seems like a natural fit, it has recovery and parallelism built in and offloads more work to kubernetes. Less is more!
 
 
@@ -25,6 +25,10 @@ Here are the parameters.
 | yaml_write_filename | If you want the rendered yaml file written, what is the filename? | str |
 | yaml_template_fields | If you have variables in your yaml file you want filled out | dict 
 | in_cluster | Whether or not Airflow has cluster permissions to create and manage Jobs | bool |
+| tail_logs | Whether to output tail logs of the pods to airflow | bool |
+| tail_logs_every | every x seconds to wait to begin a new log dump (nearest 5 sec) | int |
+| tail_logs_line_count | num of lines from end to output | int |
+| tail_logs_only_at_end | only do a tail when a job is Complete or Error | bool |
 | config_file | The path to the kube configfile | str |
 | cluster_context | If you using a config file include the cluster context | str |
 | delete_completed_job | Autodelete Jobs that completed without errors | bool |
@@ -303,6 +307,48 @@ In this situation it may be useful to have Airflow write out the rendered yaml f
 ```
 It could be very useful to have an NFS to share the same filestore across pods for writing these rendered yaml files out. 
 
+## Logging
+
+Let's talk about logging. 
+
+If you're using Kubernetes you should have a logging solution of some sort to aggregate and provide searchability of all your logs. However, we recognize that it's very useful to have Airflow itself capture logs from your pods. So here are some use cases for forwarding the logs using the KJO.
+
+    1. I just want a simple tail of the logs, I don't care about extra behavior configuration
+    2. I only want logs tailed out when the pods are in an end state; Completed, Errored
+    3. I want to specify how many lines are tailed out and/or how frequently its tailed out 
+
+
+1. Add 'tail_logs' to our task from above.
+```python
+    task_1 = KubernetesJobOperator(task_id='example_kubernetes_job_operator',
+                                   yaml_file_name='countdown_body.yaml.tmpl',
+                                   yaml_template_fields={'command': command},
+                                   in_cluster=True,
+                                   tail_logs=True)
+```
+
+If any of the below are set, 'tail_logs' does not need to be set.
+
+2. Add 'tail_logs_only_at_end' to our task from above.
+```python
+    task_1 = KubernetesJobOperator(task_id='example_kubernetes_job_operator',
+                                   yaml_file_name='countdown_body.yaml.tmpl',
+                                   yaml_template_fields={'command': command},
+                                   in_cluster=True,
+                                   tail_logs_only_at_end=True)
+```
+
+3. Configure the behavior of the log tail
+```python
+    task_1 = KubernetesJobOperator(task_id='example_kubernetes_job_operator',
+                                   yaml_file_name='countdown_body.yaml.tmpl',
+                                   yaml_template_fields={'command': command},
+                                   in_cluster=True,
+                                   tail_logs_every=60, # seconds
+                                   tail_logs_line_count=100)
+```
+
+This could get to be quite noisy so be mindful of your particular use case.
 
 ## Notes....
 

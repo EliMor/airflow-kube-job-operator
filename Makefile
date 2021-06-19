@@ -1,4 +1,4 @@
-VERSION=$(shell head -n 1 VERSION)
+VERSION=$(shell head -n 1 airflow_kjo/__version__ | sed 's/v//')
 
 clean:
 	rm -r *egg-info || true
