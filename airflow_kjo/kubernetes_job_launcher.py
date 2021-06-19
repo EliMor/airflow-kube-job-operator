@@ -54,6 +54,7 @@ class KubernetesJobLauncher:
         return yaml_obj["metadata"]["name"], yaml_obj["metadata"]["namespace"]
 
     def _tail_pod_logs(self, name, namespace, job):
+        had_logs = False
         num_lines = self.tail_log_line_count
         # can only get a log if pod is in one of these states
         logable_statuses = {'Running', 'Failed', 'Succeeded'}
@@ -75,6 +76,8 @@ class KubernetesJobLauncher:
                 logging.info(f'Reading last {num_lines} {line_or_lines} from log for pod {pod_name} in namespace {namespace}')
                 logging.info(f'Reading....\n{str_lines}')
                 logging.info(f'End log for {pod_name} in namespace {namespace}')
+                had_logs = True
+        return had_logs
 
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(3),
@@ -119,8 +122,9 @@ class KubernetesJobLauncher:
             if self.tail_logs:
                 if total_time > 0 and total_time % self.tail_logs_every == 0:
                     logging.info(f'Beginning new log dump cycle :: {log_cycles}')
-                    self._tail_pod_logs(name, namespace, job)
-                    logging.info(f'Log dump cycle {log_cycles} complete')
+                    had_logs = self._tail_pod_logs(name, namespace, job)
+                    extra = ', no logs found to stream this cycle' if not had_logs else ''
+                    logging.info(f'Log dump cycle {log_cycles} complete{extra}')
                     log_cycles += 1
 
             time.sleep(self.sleep_time)
