@@ -66,7 +66,7 @@ class KubernetesJobLauncher:
             # https://raw.githubusercontent.com/kubernetes-client/python/master/kubernetes/client/api/core_v1_api.py
             lines = [line for line in self.kube_pod_client.read_namespaced_pod_log(name=pod_name, namespace=namespace, tail_lines=num_lines)]
             str_lines = ''.join(lines)
-            logging.info(lines)
+            logging.info(str_lines)
             logging.info(f'End log for {pod_name} in namespace {namespace}')
 
     @tenacity.retry(
