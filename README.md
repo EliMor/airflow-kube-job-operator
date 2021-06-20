@@ -9,7 +9,7 @@ Airflow currently has a KubernetesPodOperator to kick off and manage pods. This 
 
 
 ## Who is it for?
-This package makes the assumption that your Airflow is deployed in Kubernetes. But not only that, the principal idea here is that the best way to use Airflow is to bundle the business logic of your Airflow Tasks into an image that you deploy in a Job. Why is this a good way to do things? We've found that Airflow can quickly get unruly if you conflate your business logic along with the execution flow. By forcing Airflow to only be used for managing your work (a fancy crontab) and not have to know anything about the work its managing, you free developers up to focus on just one thing at a time. You dont have to modify Airflow's image to release your Dag if it's missing a dependency and you dont have developers running into each other touching the same codebase. 
+This package makes the assumption that you're using Kubernetes somehow. But not only that, the principal idea here is that the best way to use Airflow is to bundle the business logic of your Airflow Tasks into an image that you deploy in a Kube Job. Why is this a good way to do things? We've found that Airflow can quickly get unruly if you conflate your business logic along with the execution flow. By forcing Airflow to only be used for managing your work (a fancy crontab) and not have to know anything about the work its managing, you free developers up to focus on just one thing at a time. You dont have to modify Airflow's requirements.txt to release your Dag if it's missing a dependency and you dont have developers running into each other touching the same codebase. 
 
 TLDR; Ideally this should be one of the only Airflow Operators you ever need! 
 
@@ -39,7 +39,7 @@ pip install airflow-kube-job-operator
 ```
 
 #### Step 1.5 (Optional) Add Role to your Airflow deployment
-If you want the Jobs to get created without having to bundle your kubeconfig file somehow into your Airflow pods, you'll need to give Airflow some extra RBAC permissions to handle Jobs within your cluster.
+If you want the Jobs to get created without having to bundle your kubeconfig file somehow into your Airflow pods, you'll need to deploy Airflow in kubernetes and give Airflow some extra RBAC permissions to handle Jobs within your cluster.
 
 ** This is needed if you want to use the option ```in_cluster=True``` **
 
@@ -80,6 +80,7 @@ rules:
       - pods/exec
 
 ```
+Alternatively, just give Airflow your kube cluster config. (A.ii.)
 
 ### Step 2. Create a template folder for your yaml files
 This template folder can be anywhere. It's up to you. But here's a suggestion.
