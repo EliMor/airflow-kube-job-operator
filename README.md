@@ -129,7 +129,7 @@ First some questions to ask yourself...
 
     A. How do I want my Dag to have access to kubernetes? 
         i. My Airflow has the above RBAC permissions to make Jobs
-        ii. I rather just use my kube config file. It's accessible somewhere in my Airflow pods already (web, worker, and scheduler)
+        ii. I rather just use my kube config file. It's accessible somewhere in Airflow already (web, worker, and scheduler)
 
     B. What does my yaml look like? 
         i. I have a simple yaml file. Just create my Job. (The yaml, 'countdown.yaml' above is like this)
