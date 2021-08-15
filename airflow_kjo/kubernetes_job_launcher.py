@@ -103,9 +103,14 @@ class KubernetesJobLauncher:
         return had_logs
 
     @staticmethod
-    def _expand_yaml_obj_with_configuration(yaml_obj, configuration):
+    def _expand_yaml_obj_with_configuration(yaml_obj, configuration, overwrite=True):
+        if 'parallelism' in configuration:
+            if overwrite or 'parallelism' not in yaml_obj['spec']:
+                yaml_obj['spec']['parallelism'] = configuration['parallelism']
+        if 'backoff_limit' in configuration:
+            if overwrite or 'backoff_limit' not in yaml_obj['spec'] :
+                yaml_obj['spec']['backoff_limit'] = configuration['backoff_limit']
         return yaml_obj
-        # TODO: Add config from outside to yaml
 
     def get(self, yaml_obj):
         self._validate_job_yaml(yaml_obj)
@@ -148,7 +153,7 @@ class KubernetesJobLauncher:
             if not job:
                 return False
             
-            completed = job.status.conditions[0].type.lower() == 'complete'
+            completed = bool(job.status.succeeded)
             if completed:
                 if bool(self.tail_logs_every) or self.tail_logs_only_at_end:
                     logging.info(f'Final log output for Job "{name}"')
