@@ -1,6 +1,5 @@
 import time
 import logging
-
 import yaml
 from kubernetes.client.rest import ApiException
 
@@ -17,12 +16,11 @@ class KubernetesJobLauncherPodError(Exception):
     """
     Created Job ended in an errored pod state
     """
-
-    pass
+    ...
 
 
 class KubeYamlValidationError(Exception):
-    pass
+    ...
 
 
 class KubernetesJobLauncher:
@@ -104,6 +102,11 @@ class KubernetesJobLauncher:
                 had_logs = True
         return had_logs
 
+    @staticmethod
+    def _expand_yaml_obj_with_configuration(yaml_obj, configuration):
+        return yaml_obj
+        # TODO: Add config from outside to yaml
+
     def get(self, yaml_obj):
         self._validate_job_yaml(yaml_obj)
         name, namespace = self._get_name_namespace(yaml_obj)
@@ -112,18 +115,27 @@ class KubernetesJobLauncher:
             return job
         except ApiException as error:
             if error.status == 404:
+                # does not exist yet
                 return False
-            # other status codes?
+            else:
+                logging.error(error.body)
 
-    def apply(self, yaml_obj):
+    def apply(self, yaml_obj, extra_configuration):
         self._validate_job_yaml(yaml_obj)
         _, namespace = self._get_name_namespace(yaml_obj)
+        yaml_obj = self._expand_yaml_obj_with_configuration(yaml_obj, extra_configuration)
         try:
             self.kube_job_client.create_namespaced_job(
                 namespace=namespace, body=yaml_obj
             )
         except ApiException as error:
-            return error.status == 409
+            if error.status == 409:
+                # already exists
+                logging.info(error.body)
+                return True
+            else:
+                logging.error(error.body)
+
         return True
 
     def watch(self, yaml_obj, running_timeout=None):
@@ -135,7 +147,8 @@ class KubernetesJobLauncher:
         while True:
             if not job:
                 return False
-            completed = bool(job.status.succeeded)
+            
+            completed = job.status.succeeded == job.spec.parallelism
             if completed:
                 if bool(self.tail_logs_every) or self.tail_logs_only_at_end:
                     logging.info(f'Final log output for Job "{name}"')
