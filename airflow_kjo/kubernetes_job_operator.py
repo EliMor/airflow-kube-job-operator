@@ -53,7 +53,7 @@ class KubernetesJobOperator(BaseOperator):
         #
         **kwargs,
     ):
-        super(KubernetesJobOperator, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         self.yaml_file_name = yaml_file_name
         self.yaml_write_path = yaml_write_path
