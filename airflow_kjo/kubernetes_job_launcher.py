@@ -110,7 +110,7 @@ class KubernetesJobLauncher:
                 yaml_obj["spec"]["parallelism"] = configuration["parallelism"]
         if "backoff_limit" in configuration:
             if overwrite or "backoff_limit" not in yaml_obj["spec"]:
-                yaml_obj["spec"]["backoff_limit"] = configuration["backoff_limit"]
+                yaml_obj["spec"]["backoffLimit"] = configuration["backoff_limit"]
         return yaml_obj
 
     def get(self, yaml_obj):
