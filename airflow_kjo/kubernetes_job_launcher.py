@@ -103,7 +103,7 @@ class KubernetesJobLauncher:
         return had_logs
 
     @staticmethod
-    def _expand_yaml_obj_with_configuration(yaml_obj, configuration, overwrite=True):
+    def _expand_yaml_obj_with_configuration(yaml_obj, configuration, overwrite=False):
         if 'parallelism' in configuration:
             if overwrite or 'parallelism' not in yaml_obj['spec']:
                 yaml_obj['spec']['parallelism'] = configuration['parallelism']
@@ -152,7 +152,7 @@ class KubernetesJobLauncher:
         while True:
             if not job:
                 return False
-            
+
             completed = bool(job.status.succeeded)
             if completed:
                 if bool(self.tail_logs_every) or self.tail_logs_only_at_end:
