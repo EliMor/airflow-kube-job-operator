@@ -126,7 +126,7 @@ class KubernetesJobLauncher:
             else:
                 logging.error(error.body)
 
-    def apply(self, yaml_obj, extra_configuration):
+    def apply(self, yaml_obj, extra_configuration={}):
         self._validate_job_yaml(yaml_obj)
         _, namespace = self._get_name_namespace(yaml_obj)
         yaml_obj = self._expand_yaml_obj_with_configuration(
