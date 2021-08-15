@@ -1,6 +1,7 @@
 import time
 import logging
-import tenacity
+
+import yaml
 from kubernetes.client.rest import ApiException
 
 # https://github.com/kubernetes-client/python/blob/master/kubernetes/docs/BatchV1Api.md
@@ -103,11 +104,17 @@ class KubernetesJobLauncher:
                 had_logs = True
         return had_logs
 
-    @tenacity.retry(
-        stop=tenacity.stop_after_attempt(3),
-        wait=tenacity.wait_random_exponential(),
-        reraise=True,
-    )
+    def get(self, yaml_obj):
+        self._validate_job_yaml(yaml_obj)
+        name, namespace = self._get_name_namespace(yaml_obj)
+        try:
+            job = self.kube_job_client.read_namespaced_job_status(name, namespace)
+            return job
+        except ApiException as error:
+            if error.status == 404:
+                return False
+            # other status codes?
+
     def apply(self, yaml_obj):
         self._validate_job_yaml(yaml_obj)
         _, namespace = self._get_name_namespace(yaml_obj)
@@ -120,13 +127,14 @@ class KubernetesJobLauncher:
         return True
 
     def watch(self, yaml_obj, running_timeout=None):
+        self._validate_job_yaml(yaml_obj)
         name, namespace = self._get_name_namespace(yaml_obj)
+        job = self.get(yaml_obj)
         total_time = 0
         log_cycles = 1
         while True:
-            job = self.kube_job_client.read_namespaced_job_status(
-                name=name, namespace=namespace
-            )
+            if not job:
+                return False
             completed = bool(job.status.succeeded)
             if completed:
                 if bool(self.tail_logs_every) or self.tail_logs_only_at_end:
@@ -158,10 +166,14 @@ class KubernetesJobLauncher:
 
             time.sleep(self.sleep_time)
             total_time += self.sleep_time
+            job = self.get(yaml_obj)
 
     def delete(self, yaml_obj):
         name, namespace = self._get_name_namespace(yaml_obj)
-        self.kube_job_client.delete_namespaced_job(
-            name=name, namespace=namespace, propagation_policy="Foreground"
-        )
+        # Verify exists before delete
+        job = self.get(yaml_obj)
+        if job:
+            self.kube_job_client.delete_namespaced_job(
+                name=name, namespace=namespace, propagation_policy="Foreground"
+            )
         return True

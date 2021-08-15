@@ -129,6 +129,8 @@ class KubernetesJobOperator(BaseOperator):
 
         yaml_obj = yaml.safe_load(rendered_template)
 
+        # ensure clean slate before creating job
+        self.kube_launcher.delete(yaml_obj)
         self.kube_launcher.apply(yaml_obj)
         self.kube_launcher.watch(yaml_obj)
         if self.delete_completed_job:
