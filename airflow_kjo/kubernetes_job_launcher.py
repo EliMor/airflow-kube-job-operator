@@ -148,7 +148,7 @@ class KubernetesJobLauncher:
             if not job:
                 return False
             
-            completed = job.status.succeeded == job.spec.parallelism
+            completed = job.status.conditions[0].type.lower() == 'complete'
             if completed:
                 if bool(self.tail_logs_every) or self.tail_logs_only_at_end:
                     logging.info(f'Final log output for Job "{name}"')
