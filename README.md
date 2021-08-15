@@ -80,6 +80,8 @@ rules:
       - pods/exec
 
 ```
+If you want to give Airflow power to run Jobs Cluster-wide modify the ClusterRole instead.
+
 Alternatively, just give Airflow your kube cluster config. (A.ii.)
 
 ### Step 2. Create a template folder for your yaml files
