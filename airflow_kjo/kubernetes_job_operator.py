@@ -5,6 +5,7 @@ import logging
 from airflow.models.baseoperator import BaseOperator
 from airflow_kjo.kubernetes_job_launcher import KubernetesJobLauncher
 
+
 class KubernetesJobOperator(BaseOperator):
     """
     Opinionated operator for kubernetes Job type execution.
@@ -24,6 +25,7 @@ class KubernetesJobOperator(BaseOperator):
     :param delete_completed_jobs: should completed jobs be autodeleted
     :param kube_launcher: pass in your own kube launcher if you're testing or brave
     """
+
     def __init__(
         self,
         # yaml related params
