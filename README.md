@@ -150,8 +150,8 @@ default_args = {
     'email': ['airflow@example.com'],
     'email_on_failure': False,
     'email_on_retry': False,
-    'retries': 1,
-    'retry_delay': timedelta(minutes=5),
+    'retries': 1, # the number of times the pod will retry, can pass in per-task
+    'retry_delay': timedelta(minutes=5), 
     'start_date': datetime(2021, 2, 24, 12, 0),
 }
 with DAG(
