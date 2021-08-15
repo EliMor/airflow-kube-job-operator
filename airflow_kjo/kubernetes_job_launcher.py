@@ -1,6 +1,6 @@
 import time
 import logging
-import tenacity
+import yaml
 from kubernetes.client.rest import ApiException
 
 # https://github.com/kubernetes-client/python/blob/master/kubernetes/docs/BatchV1Api.md
@@ -16,12 +16,11 @@ class KubernetesJobLauncherPodError(Exception):
     """
     Created Job ended in an errored pod state
     """
-
-    pass
+    ...
 
 
 class KubeYamlValidationError(Exception):
-    pass
+    ...
 
 
 class KubernetesJobLauncher:
@@ -103,30 +102,57 @@ class KubernetesJobLauncher:
                 had_logs = True
         return had_logs
 
-    @tenacity.retry(
-        stop=tenacity.stop_after_attempt(3),
-        wait=tenacity.wait_random_exponential(),
-        reraise=True,
-    )
-    def apply(self, yaml_obj):
+    @staticmethod
+    def _expand_yaml_obj_with_configuration(yaml_obj, configuration, overwrite=False):
+        if 'parallelism' in configuration:
+            if overwrite or 'parallelism' not in yaml_obj['spec']:
+                yaml_obj['spec']['parallelism'] = configuration['parallelism']
+        if 'backoff_limit' in configuration:
+            if overwrite or 'backoff_limit' not in yaml_obj['spec'] :
+                yaml_obj['spec']['backoff_limit'] = configuration['backoff_limit']
+        return yaml_obj
+
+    def get(self, yaml_obj):
+        self._validate_job_yaml(yaml_obj)
+        name, namespace = self._get_name_namespace(yaml_obj)
+        try:
+            job = self.kube_job_client.read_namespaced_job_status(name, namespace)
+            return job
+        except ApiException as error:
+            if error.status == 404:
+                # does not exist yet
+                return False
+            else:
+                logging.error(error.body)
+
+    def apply(self, yaml_obj, extra_configuration):
         self._validate_job_yaml(yaml_obj)
         _, namespace = self._get_name_namespace(yaml_obj)
+        yaml_obj = self._expand_yaml_obj_with_configuration(yaml_obj, extra_configuration)
         try:
             self.kube_job_client.create_namespaced_job(
                 namespace=namespace, body=yaml_obj
             )
         except ApiException as error:
-            return error.status == 409
+            if error.status == 409:
+                # already exists
+                logging.info(error.body)
+                return True
+            else:
+                logging.error(error.body)
+
         return True
 
     def watch(self, yaml_obj, running_timeout=None):
+        self._validate_job_yaml(yaml_obj)
         name, namespace = self._get_name_namespace(yaml_obj)
+        job = self.get(yaml_obj)
         total_time = 0
         log_cycles = 1
         while True:
-            job = self.kube_job_client.read_namespaced_job_status(
-                name=name, namespace=namespace
-            )
+            if not job:
+                return False
+
             completed = bool(job.status.succeeded)
             if completed:
                 if bool(self.tail_logs_every) or self.tail_logs_only_at_end:
@@ -158,10 +184,14 @@ class KubernetesJobLauncher:
 
             time.sleep(self.sleep_time)
             total_time += self.sleep_time
+            job = self.get(yaml_obj)
 
     def delete(self, yaml_obj):
         name, namespace = self._get_name_namespace(yaml_obj)
-        self.kube_job_client.delete_namespaced_job(
-            name=name, namespace=namespace, propagation_policy="Foreground"
-        )
+        # Verify exists before delete
+        job = self.get(yaml_obj)
+        if job:
+            self.kube_job_client.delete_namespaced_job(
+                name=name, namespace=namespace, propagation_policy="Foreground"
+            )
         return True

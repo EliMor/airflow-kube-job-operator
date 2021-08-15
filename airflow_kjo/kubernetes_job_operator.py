@@ -3,10 +3,7 @@ import yaml
 import logging
 
 from airflow.models.baseoperator import BaseOperator
-from airflow.utils.decorators import apply_defaults
-
 from airflow_kjo.kubernetes_job_launcher import KubernetesJobLauncher
-
 
 class KubernetesJobOperator(BaseOperator):
     """
@@ -27,8 +24,6 @@ class KubernetesJobOperator(BaseOperator):
     :param delete_completed_jobs: should completed jobs be autodeleted
     :param kube_launcher: pass in your own kube launcher if you're testing or brave
     """
-
-    @apply_defaults
     def __init__(
         self,
         # yaml related params
@@ -53,7 +48,7 @@ class KubernetesJobOperator(BaseOperator):
         #
         **kwargs,
     ):
-        super(KubernetesJobOperator, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         self.yaml_file_name = yaml_file_name
         self.yaml_write_path = yaml_write_path
@@ -129,6 +124,8 @@ class KubernetesJobOperator(BaseOperator):
 
         yaml_obj = yaml.safe_load(rendered_template)
 
+        # ensure clean slate before creating job
+        self.kube_launcher.delete(yaml_obj)
         self.kube_launcher.apply(yaml_obj)
         self.kube_launcher.watch(yaml_obj)
         if self.delete_completed_job:
