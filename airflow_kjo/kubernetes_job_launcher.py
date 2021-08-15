@@ -16,6 +16,7 @@ class KubernetesJobLauncherPodError(Exception):
     """
     Created Job ended in an errored pod state
     """
+
     ...
 
 
@@ -104,12 +105,12 @@ class KubernetesJobLauncher:
 
     @staticmethod
     def _expand_yaml_obj_with_configuration(yaml_obj, configuration, overwrite=False):
-        if 'parallelism' in configuration:
-            if overwrite or 'parallelism' not in yaml_obj['spec']:
-                yaml_obj['spec']['parallelism'] = configuration['parallelism']
-        if 'backoff_limit' in configuration:
-            if overwrite or 'backoff_limit' not in yaml_obj['spec'] :
-                yaml_obj['spec']['backoff_limit'] = configuration['backoff_limit']
+        if "parallelism" in configuration:
+            if overwrite or "parallelism" not in yaml_obj["spec"]:
+                yaml_obj["spec"]["parallelism"] = configuration["parallelism"]
+        if "backoff_limit" in configuration:
+            if overwrite or "backoff_limit" not in yaml_obj["spec"]:
+                yaml_obj["spec"]["backoff_limit"] = configuration["backoff_limit"]
         return yaml_obj
 
     def get(self, yaml_obj):
@@ -128,7 +129,9 @@ class KubernetesJobLauncher:
     def apply(self, yaml_obj, extra_configuration):
         self._validate_job_yaml(yaml_obj)
         _, namespace = self._get_name_namespace(yaml_obj)
-        yaml_obj = self._expand_yaml_obj_with_configuration(yaml_obj, extra_configuration)
+        yaml_obj = self._expand_yaml_obj_with_configuration(
+            yaml_obj, extra_configuration
+        )
         try:
             self.kube_job_client.create_namespaced_job(
                 namespace=namespace, body=yaml_obj
