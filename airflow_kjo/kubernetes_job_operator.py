@@ -126,14 +126,15 @@ class KubernetesJobOperator(BaseOperator):
         extra_yaml_configuration = {"backoff_limit":retry_count}
 
         # ensure clean slate before creating job
-        self.kube_launcher.delete(yaml_obj)
-        self.kube_launcher.apply(yaml_obj, extra_yaml_configuration)
-        self.kube_launcher.watch(yaml_obj, 
+        self.kube_launcher(yaml_obj)
+        self.kube_launcher.delete()
+        self.kube_launcher.apply(extra_yaml_configuration)
+        self.kube_launcher.watch( 
             tail_logs_every=self.tail_logs_every,
             tail_logs_line_count=self.tail_logs_line_count,
             tail_logs_only_at_end=self.tail_logs_only_at_end)
         if self.delete_completed_job:
             logging.info(f"Cleaning up Job")
-            self.kube_launcher.delete(yaml_obj)
+            self.kube_launcher.delete()
 
         return rendered_template
