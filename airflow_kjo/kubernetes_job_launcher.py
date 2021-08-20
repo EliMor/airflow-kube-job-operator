@@ -13,10 +13,11 @@ from airflow_kjo.kubernetes_util import (
 
 
 class KubeJobYaml:
-
     def __init__(self, yaml, extra_configuration, overwrite=False):
         self._validate_job_yaml(yaml)
-        self.yaml = self._expand_yaml_obj_with_configuration(yaml, extra_configuration, overwrite)
+        self.yaml = self._expand_yaml_obj_with_configuration(
+            yaml, extra_configuration, overwrite
+        )
         self.name = self.yaml["metadata"]["name"]
         self.namespace = self.yaml["metadata"]["namespace"]
 
@@ -29,7 +30,6 @@ class KubeJobYaml:
         metadata = yaml["metadata"]
         metadata["name"]
         metadata["namespace"]
-
 
     @staticmethod
     def _expand_yaml_obj_with_configuration(self, yaml, configuration, overwrite):
@@ -46,6 +46,7 @@ class KubernetesJobLauncherPodError(Exception):
     """
     Created Job ended in an errored pod state
     """
+
     ...
 
 
@@ -56,13 +57,13 @@ class KubernetesJobLauncher:
         kube_client=None,
         in_cluster=True,
         cluster_context=None,
-        config_file=None
+        config_file=None,
     ):
         self.kube_client = kube_client or get_kube_client(
             in_cluster=in_cluster,
             cluster_context=cluster_context,
-            config_file=config_file
-            )
+            config_file=config_file,
+        )
 
         self.kube_job_client = get_kube_job_client(self.kube_client)
         self.kube_pod_client = get_kube_pod_client(self.kube_client)
@@ -75,7 +76,8 @@ class KubernetesJobLauncher:
         logable_statuses = {"Running", "Failed", "Succeeded"}
         # get all pods for the job
         job_pods = self.kube_pod_client.list_namespaced_pod(
-            namespace=self.kube_yaml.namespace, label_selector=f"job-name={self.kube_yaml.name}"
+            namespace=self.kube_yaml.namespace,
+            label_selector=f"job-name={self.kube_yaml.name}",
         )
         for pod in job_pods.items:
             pod_name = pod.metadata.name
@@ -87,7 +89,9 @@ class KubernetesJobLauncher:
             # https://raw.githubusercontent.com/kubernetes-client/python/master/kubernetes/client/api/core_v1_api.py
             if bool(num_lines):
                 read_log = self.kube_pod_client.read_namespaced_pod_log(
-                    name=pod_name, namespace=self.kube_yaml.namespace, tail_lines=num_lines
+                    name=pod_name,
+                    namespace=self.kube_yaml.namespace,
+                    tail_lines=num_lines,
                 )
                 line_or_lines = "line" if num_lines == 1 else "lines"
                 msg = f'Reading last {num_lines} {line_or_lines} from log for Pod "{pod_name}" in Namespace "{self.kube_yaml.namespace}"'
@@ -102,13 +106,17 @@ class KubernetesJobLauncher:
             if str_lines:
                 logging.info(msg)
                 logging.info(f"Reading....\n{str_lines}")
-                logging.info(f'End log for Pod "{pod_name}" in Namespace "{self.kube_yaml.namespace}"')
+                logging.info(
+                    f'End log for Pod "{pod_name}" in Namespace "{self.kube_yaml.namespace}"'
+                )
                 had_logs = True
         return had_logs
 
     def get(self):
         try:
-            job = self.kube_job_client.read_namespaced_job_status(self.kube_yaml.name, self.kube_yaml.namespace)
+            job = self.kube_job_client.read_namespaced_job_status(
+                self.kube_yaml.name, self.kube_yaml.namespace
+            )
             return job
         except ApiException as error:
             if error.status == 404:
@@ -131,10 +139,14 @@ class KubernetesJobLauncher:
                 logging.error(error.body)
         return True
 
-    def watch(self, tail_logs_every=None,
+    def watch(
+        self,
+        tail_logs_every=None,
         tail_logs_line_count=100,
-        tail_logs_only_at_end=False, running_timeout=None):
-        
+        tail_logs_only_at_end=False,
+        running_timeout=None,
+    ):
+
         job = self.get()
         total_time = 0
         log_cycles = 1
@@ -146,7 +158,11 @@ class KubernetesJobLauncher:
             if completed:
                 if bool(tail_logs_every) or tail_logs_only_at_end:
                     logging.info(f'Final log output for Job "{self.kube_yaml.name}"')
-                    self._tail_pod_logs(self.kube_yaml.name, self.kube_yaml.namespace, tail_logs_line_count)
+                    self._tail_pod_logs(
+                        self.kube_yaml.name,
+                        self.kube_yaml.namespace,
+                        tail_logs_line_count,
+                    )
                 logging.info(f'Job "{self.kube_yaml.name}" status is Completed')
                 return True
             if running_timeout and total_time > running_timeout:
@@ -154,7 +170,11 @@ class KubernetesJobLauncher:
 
             if bool(job.status.failed):
                 if bool(tail_logs_every) or tail_logs_only_at_end:
-                    self._tail_pod_logs(self.kube_yaml.name, self.kube_yaml.namespace, tail_logs_line_count)
+                    self._tail_pod_logs(
+                        self.kube_yaml.name,
+                        self.kube_yaml.namespace,
+                        tail_logs_line_count,
+                    )
                 raise KubernetesJobLauncherPodError(
                     f'Job "{self.kube_yaml.name}" in Namespace "{self.kube_yaml.namespace}" ended in Error state'
                 )
@@ -164,7 +184,11 @@ class KubernetesJobLauncher:
                     and total_time % (tail_logs_every // self.sleep_time) == 0
                 ):
                     logging.info(f"Beginning new log dump cycle :: {log_cycles}")
-                    had_logs = self._tail_pod_logs(self.kube_yaml.name, self.kube_yaml.namespace, tail_logs_line_count)
+                    had_logs = self._tail_pod_logs(
+                        self.kube_yaml.name,
+                        self.kube_yaml.namespace,
+                        tail_logs_line_count,
+                    )
                     no_logs_msg = (
                         ", no logs found to output this cycle" if not had_logs else ""
                     )
@@ -180,6 +204,8 @@ class KubernetesJobLauncher:
         job = self.get()
         if job:
             self.kube_job_client.delete_namespaced_job(
-                name=self.kube_yaml.name, namespace=self.kube_yaml.namespace, propagation_policy="Foreground"
+                name=self.kube_yaml.name,
+                namespace=self.kube_yaml.namespace,
+                propagation_policy="Foreground",
             )
         return True

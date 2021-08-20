@@ -103,7 +103,9 @@ class KubernetesJobOperator(BaseOperator):
 
     def execute(self, context):
         dag = context["dag"]
-        retry_count = self.retries # provided by BaseOperator, can also set in default_args in DAG creation
+        retry_count = (
+            self.retries
+        )  # provided by BaseOperator, can also set in default_args in DAG creation
         jinja_env = dag.get_template_env()
         if dag.template_searchpath:
             template = jinja_env.get_template(self.yaml_file_name)
@@ -117,7 +119,7 @@ class KubernetesJobOperator(BaseOperator):
             self._write_rendered_template(rendered_template)
 
         yaml_obj = yaml.safe_load(rendered_template)
-        extra_yaml_configuration = {"backoff_limit":retry_count}
+        extra_yaml_configuration = {"backoff_limit": retry_count}
         kube_yaml = KubeJobYaml(yaml_obj, extra_yaml_configuration)
 
         if not self.kube_launcher:
@@ -125,15 +127,16 @@ class KubernetesJobOperator(BaseOperator):
                 kube_yaml=kube_yaml.yaml,
                 in_cluster=self.in_cluster,
                 cluster_context=self.cluster_context,
-                config_file=self.config_file
+                config_file=self.config_file,
             )
         # ensure clean slate before creating job
         self.kube_launcher.delete()
         self.kube_launcher.apply()
-        self.kube_launcher.watch( 
+        self.kube_launcher.watch(
             tail_logs_every=self.tail_logs_every,
             tail_logs_line_count=self.tail_logs_line_count,
-            tail_logs_only_at_end=self.tail_logs_only_at_end)
+            tail_logs_only_at_end=self.tail_logs_only_at_end,
+        )
         if self.delete_completed_job:
             logging.info(f"Cleaning up Job")
             self.kube_launcher.delete()
