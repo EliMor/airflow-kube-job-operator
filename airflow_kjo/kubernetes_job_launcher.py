@@ -31,7 +31,7 @@ class KubeJobYaml:
         metadata["namespace"]
 
     @staticmethod
-    def _expand_yaml_obj_with_configuration(self, yaml, configuration, overwrite):
+    def _expand_yaml_obj_with_configuration(yaml, configuration, overwrite):
         if "parallelism" in configuration:
             if overwrite or "parallelism" not in yaml["spec"]:
                 yaml["spec"]["parallelism"] = configuration["parallelism"]
