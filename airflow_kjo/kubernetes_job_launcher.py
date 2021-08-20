@@ -1,6 +1,5 @@
 import time
 import logging
-import yaml
 from kubernetes.client.rest import ApiException
 
 # https://github.com/kubernetes-client/python/blob/master/kubernetes/docs/BatchV1Api.md
