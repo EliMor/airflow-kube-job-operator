@@ -91,10 +91,7 @@ class KubernetesJobOperator(BaseOperator):
             self.kube_launcher = KubernetesJobLauncher(
                 in_cluster=self.in_cluster,
                 cluster_context=self.cluster_context,
-                config_file=self.config_file,
-                tail_logs_every=self.tail_logs_every,
-                tail_logs_line_count=self.tail_logs_line_count,
-                tail_logs_only_at_end=self.tail_logs_only_at_end,
+                config_file=self.config_file
             )
 
     def _retrieve_template_from_file(self, jinja_env):
@@ -131,7 +128,10 @@ class KubernetesJobOperator(BaseOperator):
         # ensure clean slate before creating job
         self.kube_launcher.delete(yaml_obj)
         self.kube_launcher.apply(yaml_obj, extra_yaml_configuration)
-        self.kube_launcher.watch(yaml_obj)
+        self.kube_launcher.watch(yaml_obj, 
+            tail_logs_every=self.tail_logs_every,
+            tail_logs_line_count=self.tail_logs_line_count,
+            tail_logs_only_at_end=self.tail_logs_only_at_end)
         if self.delete_completed_job:
             logging.info(f"Cleaning up Job")
             self.kube_launcher.delete(yaml_obj)
