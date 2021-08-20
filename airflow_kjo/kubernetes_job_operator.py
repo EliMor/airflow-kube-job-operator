@@ -3,7 +3,7 @@ import yaml
 import logging
 
 from airflow.models.baseoperator import BaseOperator
-from airflow_kjo.kubernetes_job_launcher import KubernetesJobLauncher
+from airflow_kjo.kubernetes_job_launcher import KubernetesJobLauncher, KubeJobYaml
 
 
 class KubernetesJobOperator(BaseOperator):
@@ -87,12 +87,6 @@ class KubernetesJobOperator(BaseOperator):
 
         self.delete_completed_job = delete_completed_job
         self.kube_launcher = kube_launcher
-        if not self.kube_launcher:
-            self.kube_launcher = KubernetesJobLauncher(
-                in_cluster=self.in_cluster,
-                cluster_context=self.cluster_context,
-                config_file=self.config_file
-            )
 
     def _retrieve_template_from_file(self, jinja_env):
         with open(self.yaml_file_name, "r") as yaml_file_obj:
@@ -124,11 +118,18 @@ class KubernetesJobOperator(BaseOperator):
 
         yaml_obj = yaml.safe_load(rendered_template)
         extra_yaml_configuration = {"backoff_limit":retry_count}
+        kube_yaml = KubeJobYaml(yaml_obj, extra_yaml_configuration)
 
+        if not self.kube_launcher:
+            self.kube_launcher = KubernetesJobLauncher(
+                kube_yaml=kube_yaml.yaml,
+                in_cluster=self.in_cluster,
+                cluster_context=self.cluster_context,
+                config_file=self.config_file
+            )
         # ensure clean slate before creating job
-        self.kube_launcher(yaml_obj)
         self.kube_launcher.delete()
-        self.kube_launcher.apply(extra_yaml_configuration)
+        self.kube_launcher.apply()
         self.kube_launcher.watch( 
             tail_logs_every=self.tail_logs_every,
             tail_logs_line_count=self.tail_logs_line_count,
