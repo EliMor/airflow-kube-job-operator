@@ -1,0 +1,12 @@
+
+
+0.2.0
+Retry should be managed by kube, make sure that now task retry counts will clean the state of the job. 
+
+0.1.0
+Add log forwarding feature, not perfect strategy. Should look at simply retrieving delta logs.
+
+0.0.1
+Base functionality.
+Lets client pass template path for yaml files for Kube jobs and operator will kick off and manage.
+Can also combine templates.
