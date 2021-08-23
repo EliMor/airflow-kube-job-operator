@@ -125,6 +125,7 @@ class KubernetesJobLauncher:
                 return False
             else:
                 logging.error(error.body)
+                raise
 
     def apply(self, yaml_obj, extra_configuration={}):
         self._validate_job_yaml(yaml_obj)
@@ -143,6 +144,7 @@ class KubernetesJobLauncher:
                 return True
             else:
                 logging.error(error.body)
+                raise
 
         return True
 
@@ -166,7 +168,8 @@ class KubernetesJobLauncher:
             if running_timeout and total_time > running_timeout:
                 pass  # running timeout exceeded, probably just a warning, would allow task to continue
 
-            if bool(job.status.failed):
+            failed = bool(job.status.failed)
+            if failed:
                 if bool(self.tail_logs_every) or self.tail_logs_only_at_end:
                     self._tail_pod_logs(name, namespace, job)
                 raise KubernetesJobLauncherPodError(
@@ -189,12 +192,26 @@ class KubernetesJobLauncher:
             total_time += self.sleep_time
             job = self.get(yaml_obj)
 
-    def delete(self, yaml_obj):
+    def delete(self, yaml_obj, delete_failed=False, delete_completed=False):
+        """
+        :param delete_failed: bool
+            will delete job if state is errored
+        :param delete_complete: bool
+            will delete job if state is complete
+        """
         name, namespace = self._get_name_namespace(yaml_obj)
+        delete = False
         # Verify exists before delete
         job = self.get(yaml_obj)
         if job:
-            self.kube_job_client.delete_namespaced_job(
-                name=name, namespace=namespace, propagation_policy="Foreground"
-            )
-        return True
+            completed = bool(job.status.succeeded)
+            failed = bool(job.status.failed)
+            if delete_failed and failed:
+                delete = True
+            if delete_completed and completed:
+                delete = True
+            if delete:
+                self.kube_job_client.delete_namespaced_job(
+                    name=name, namespace=namespace, propagation_policy="Foreground"
+                )
+        return delete
