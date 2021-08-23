@@ -133,7 +133,9 @@ class KubernetesJobOperator(BaseOperator):
         # ensure clean slate before creating job
         task_instance = context["task_instance"]
         if task_instance.try_number == 1:
-            self.kube_launcher.delete(yaml_obj, delete_failed=True, delete_completed=True)
+            self.kube_launcher.delete(
+                yaml_obj, delete_failed=True, delete_completed=True
+            )
         self.kube_launcher.apply(yaml_obj, extra_yaml_configuration)
         self.kube_launcher.watch(yaml_obj)
         if self.delete_completed_job:
