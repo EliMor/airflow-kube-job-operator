@@ -123,6 +123,7 @@ class KubernetesJobLauncher:
                 return False
             else:
                 logging.error(error.body)
+                raise
 
     def apply(self):
         try:
@@ -136,6 +137,7 @@ class KubernetesJobLauncher:
                 return True
             else:
                 logging.error(error.body)
+                raise
         return True
 
     def watch(
@@ -167,13 +169,11 @@ class KubernetesJobLauncher:
             if running_timeout and total_time > running_timeout:
                 pass  # running timeout exceeded, probably just a warning, would allow task to continue
 
-            if bool(job.status.failed):
-                if bool(tail_logs_every) or tail_logs_only_at_end:
-                    self._tail_pod_logs(
-                        self.kube_yaml.name,
-                        self.kube_yaml.namespace,
-                        tail_logs_line_count,
-                    )
+
+            failed = bool(job.status.failed)
+            if failed:
+                if bool(self.tail_logs_every) or self.tail_logs_only_at_end:
+                    self._tail_pod_logs(name, namespace, job)
                 raise KubernetesJobLauncherPodError(
                     f'Job "{self.kube_yaml.name}" in Namespace "{self.kube_yaml.namespace}" ended in Error state'
                 )
@@ -198,13 +198,25 @@ class KubernetesJobLauncher:
             total_time += self.sleep_time
             job = self.get()
 
-    def delete(self):
+    def delete(self, delete_failed=False, delete_completed=False):
+        """
+        :param delete_failed: bool
+            will delete job if state is errored
+        :param delete_complete: bool
+            will delete job if state is complete
+        """
+        delete = False
         # Verify exists before delete
         job = self.get()
         if job:
-            self.kube_job_client.delete_namespaced_job(
-                name=self.kube_yaml.name,
-                namespace=self.kube_yaml.namespace,
-                propagation_policy="Foreground",
-            )
-        return True
+            completed = bool(job.status.succeeded)
+            failed = bool(job.status.failed)
+            if delete_failed and failed:
+                delete = True
+            if delete_completed and completed:
+                delete = True
+            if delete:
+                self.kube_job_client.delete_namespaced_job(
+                    name=self.kube_yaml.name, namespace=self.kube_yaml.namespace, propagation_policy="Foreground"
+                )
+        return delete
