@@ -169,7 +169,6 @@ class KubernetesJobLauncher:
             if running_timeout and total_time > running_timeout:
                 pass  # running timeout exceeded, probably just a warning, would allow task to continue
 
-
             failed = bool(job.status.failed)
             if failed:
                 if bool(self.tail_logs_every) or self.tail_logs_only_at_end:
@@ -217,6 +216,8 @@ class KubernetesJobLauncher:
                 delete = True
             if delete:
                 self.kube_job_client.delete_namespaced_job(
-                    name=self.kube_yaml.name, namespace=self.kube_yaml.namespace, propagation_policy="Foreground"
+                    name=self.kube_yaml.name,
+                    namespace=self.kube_yaml.namespace,
+                    propagation_policy="Foreground",
                 )
         return delete

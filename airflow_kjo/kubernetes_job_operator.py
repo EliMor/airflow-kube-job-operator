@@ -138,7 +138,7 @@ class KubernetesJobOperator(BaseOperator):
             tail_logs_every=self.tail_logs_every,
             tail_logs_line_count=self.tail_logs_line_count,
             tail_logs_only_at_end=self.tail_logs_only_at_end,
-        )        
+        )
         if self.delete_completed_job:
             logging.info(f"Cleaning up Job")
             self.kube_launcher.delete(delete_completed=True)
