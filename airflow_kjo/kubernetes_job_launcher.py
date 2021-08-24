@@ -11,7 +11,7 @@ from airflow_kjo.kubernetes_util import (
 )
 
 
-class KubeJobYaml:
+class KubernetesJobYaml:
     def __init__(self, yaml, extra_configuration, overwrite=False):
         self._validate_job_yaml(yaml)
         self.yaml = self._expand_yaml_obj_with_configuration(
@@ -24,8 +24,10 @@ class KubeJobYaml:
     def _validate_job_yaml(yaml):
         """
         Ensure that the yaml obj passes some requirements,
-        !. must have a name and namespace field in metadata block
+        1. must be a Job type
+        2. must have a name and namespace field in metadata block
         """
+        assert yaml["kind"] == "Job"
         metadata = yaml["metadata"]
         metadata["name"]
         metadata["namespace"]
@@ -45,7 +47,6 @@ class KubernetesJobLauncherPodError(Exception):
     """
     Created Job ended in an errored pod state
     """
-
     ...
 
 
@@ -159,11 +160,7 @@ class KubernetesJobLauncher:
             if completed:
                 if bool(tail_logs_every) or tail_logs_only_at_end:
                     logging.info(f'Final log output for Job "{self.kube_yaml.name}"')
-                    self._tail_pod_logs(
-                        self.kube_yaml.name,
-                        self.kube_yaml.namespace,
-                        tail_logs_line_count,
-                    )
+                    self._tail_pod_logs(tail_logs_line_count)
                 logging.info(f'Job "{self.kube_yaml.name}" status is Completed')
                 return True
             if running_timeout and total_time > running_timeout:
@@ -172,7 +169,7 @@ class KubernetesJobLauncher:
             failed = bool(job.status.failed)
             if failed:
                 if bool(self.tail_logs_every) or self.tail_logs_only_at_end:
-                    self._tail_pod_logs(name, namespace, job)
+                    self._tail_pod_logs(tail_logs_line_count)
                 raise KubernetesJobLauncherPodError(
                     f'Job "{self.kube_yaml.name}" in Namespace "{self.kube_yaml.namespace}" ended in Error state'
                 )
@@ -182,11 +179,7 @@ class KubernetesJobLauncher:
                     and total_time % (tail_logs_every // self.sleep_time) == 0
                 ):
                     logging.info(f"Beginning new log dump cycle :: {log_cycles}")
-                    had_logs = self._tail_pod_logs(
-                        self.kube_yaml.name,
-                        self.kube_yaml.namespace,
-                        tail_logs_line_count,
-                    )
+                    had_logs = self._tail_pod_logs(tail_logs_line_count)
                     no_logs_msg = (
                         ", no logs found to output this cycle" if not had_logs else ""
                     )

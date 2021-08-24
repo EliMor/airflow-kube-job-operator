@@ -3,7 +3,7 @@ import yaml
 import logging
 
 from airflow.models.baseoperator import BaseOperator
-from airflow_kjo.kubernetes_job_launcher import KubernetesJobLauncher, KubeJobYaml
+from airflow_kjo.kubernetes_job_launcher import KubernetesJobLauncher, KubernetesJobYaml
 
 
 class KubernetesJobOperator(BaseOperator):
@@ -120,7 +120,7 @@ class KubernetesJobOperator(BaseOperator):
 
         yaml_obj = yaml.safe_load(rendered_template)
         extra_yaml_configuration = {"backoff_limit": retry_count}
-        kube_yaml = KubeJobYaml(yaml_obj, extra_yaml_configuration)
+        kube_yaml = KubernetesJobYaml(yaml_obj, extra_yaml_configuration)
 
         if not self.kube_launcher:
             self.kube_launcher = KubernetesJobLauncher(
