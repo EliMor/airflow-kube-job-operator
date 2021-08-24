@@ -133,7 +133,7 @@ class KubernetesJobOperator(BaseOperator):
         task_instance = context["task_instance"]
         if task_instance.try_number == 1:
             self.kube_launcher.delete(delete_failed=True, delete_completed=True)
-        self.kube_launcher.apply(extra_yaml_configuration)
+        self.kube_launcher.apply()
         self.kube_launcher.watch(
             tail_logs_every=self.tail_logs_every,
             tail_logs_line_count=self.tail_logs_line_count,
