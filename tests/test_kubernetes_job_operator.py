@@ -1,6 +1,5 @@
 import pathlib
 import unittest
-import pytest
 from jinja2 import FileSystemLoader
 from jinja2 import Template
 from jinja2 import Environment
@@ -44,7 +43,6 @@ class TestKubernetesJobOperator(unittest.TestCase):
                         template_searchpath=fixture_path)
         self.task_instance = TaskInstanceMock()
         self.kube_launcher = KubeLauncherMock()
-
         self.fixture_path = fixture_path
 
 

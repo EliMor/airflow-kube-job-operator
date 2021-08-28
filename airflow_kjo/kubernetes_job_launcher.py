@@ -12,11 +12,13 @@ from airflow_kjo.kubernetes_util import (
 
 
 class KubernetesJobYaml:
-    def __init__(self, yaml, extra_configuration, overwrite=False):
+    def __init__(self, yaml, extra_configuration=None, overwrite=False):
         self._validate_job_yaml(yaml)
-        self.yaml = self._expand_yaml_obj_with_configuration(
-            yaml, extra_configuration, overwrite
-        )
+        self.yaml = yaml
+        if extra_configuration:
+            self.yaml = self._expand_yaml_obj_with_configuration(
+                yaml, extra_configuration, overwrite
+            )
         self.name = self.yaml["metadata"]["name"]
         self.namespace = self.yaml["metadata"]["namespace"]
 
@@ -26,11 +28,15 @@ class KubernetesJobYaml:
         Ensure that the yaml obj passes some requirements,
         1. must be a Job type
         2. must have a name and namespace field in metadata block
+        3. must have a restartPolicy of Never or OnFailure
         """
         assert yaml["kind"] == "Job"
+        restart_policy = yaml["spec"]["template"]["spec"]["restartPolicy"]
+        assert restart_policy in ('Never', 'OnFailure')
         metadata = yaml["metadata"]
         metadata["name"]
         metadata["namespace"]
+        return True
 
     @staticmethod
     def _expand_yaml_obj_with_configuration(yaml, configuration, overwrite):
