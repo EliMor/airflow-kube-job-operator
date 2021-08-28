@@ -12,7 +12,7 @@ push:
 	twine upload dist/*
 
 test:
-	pytest tests
+	export PYTHONPATH=./ && pytest tests
 
 format:
 	black airflow_kjo

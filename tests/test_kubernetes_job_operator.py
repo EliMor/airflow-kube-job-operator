@@ -12,12 +12,16 @@ from airflow_kjo import KubernetesJobOperator
 class KubeLauncherMock:
     def __init__(self):
         pass
-    def apply(self, yaml_obj):
+    def apply(self, **kwargs):
         pass
-    def watch(self, yaml_obj):
+    def watch(self, **kwargs):
         pass
-    def delete(self, yaml_obj):
+    def delete(self, **kwargs):
         pass
+
+class TaskInstanceMock:
+    def __init__(self):
+        self.try_number = 1
 
 class TestKubernetesJobOperator(unittest.TestCase):
 
@@ -38,6 +42,9 @@ class TestKubernetesJobOperator(unittest.TestCase):
         self.dag = DAG('test_kubernetes_job_op_dag', 
                         default_args=default_args,
                         template_searchpath=fixture_path)
+        self.task_instance = TaskInstanceMock()
+        self.kube_launcher = KubeLauncherMock()
+
         self.fixture_path = fixture_path
 
 
@@ -55,13 +62,12 @@ class TestKubernetesJobOperator(unittest.TestCase):
 
         template = Template(yaml_content)
         expected_rendered = template.render(command=command, task_num=task_num)
-        kube_launcher = KubeLauncherMock()
         task = KubernetesJobOperator(task_id=yaml_file_name,
                 yaml_file_name=yaml_file_name,
                 yaml_template_fields={'command': command, 'task_num':task_num},
-                kube_launcher=kube_launcher)
+                kube_launcher=self.kube_launcher)
         
-        rendered_result = task.execute({'dag':self.dag})
+        rendered_result = task.execute({'dag':self.dag, 'ti': self.task_instance, 'task_instance':self.task_instance})
 
         assert rendered_result == expected_rendered
 
@@ -77,12 +83,11 @@ class TestKubernetesJobOperator(unittest.TestCase):
         template = jinja_env.get_template(base_yaml_file_name)
         expected_rendered = template.render(command=command)
 
-        kube_launcher = KubeLauncherMock()
         task = KubernetesJobOperator(task_id=base_yaml_file_name,
                 yaml_file_name=base_yaml_file_name,
                 yaml_template_fields={'command': command},
-                kube_launcher=kube_launcher)
+                kube_launcher=self.kube_launcher)
         
-        rendered_result = task.execute({'dag':self.dag})
+        rendered_result = task.execute({'dag':self.dag, 'ti': self.task_instance, 'task_instance':self.task_instance})
 
         assert rendered_result == expected_rendered
