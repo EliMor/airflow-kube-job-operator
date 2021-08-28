@@ -3,7 +3,7 @@ import yaml
 import logging
 
 from airflow.models.baseoperator import BaseOperator
-from airflow_kjo.kubernetes_job_launcher import KubernetesJobLauncher
+from airflow_kjo.kubernetes_job_launcher import KubernetesJobLauncher, KubernetesJobYaml
 
 
 class KubernetesJobOperator(BaseOperator):
@@ -87,15 +87,6 @@ class KubernetesJobOperator(BaseOperator):
 
         self.delete_completed_job = delete_completed_job
         self.kube_launcher = kube_launcher
-        if not self.kube_launcher:
-            self.kube_launcher = KubernetesJobLauncher(
-                in_cluster=self.in_cluster,
-                cluster_context=self.cluster_context,
-                config_file=self.config_file,
-                tail_logs_every=self.tail_logs_every,
-                tail_logs_line_count=self.tail_logs_line_count,
-                tail_logs_only_at_end=self.tail_logs_only_at_end,
-            )
 
     def _retrieve_template_from_file(self, jinja_env):
         with open(self.yaml_file_name, "r") as yaml_file_obj:
@@ -129,17 +120,27 @@ class KubernetesJobOperator(BaseOperator):
 
         yaml_obj = yaml.safe_load(rendered_template)
         extra_yaml_configuration = {"backoff_limit": retry_count}
+        kjy = KubernetesJobYaml(yaml_obj, extra_yaml_configuration)
 
+        if not self.kube_launcher:
+            self.kube_launcher = KubernetesJobLauncher(
+                kube_yaml=kjy.yaml,
+                in_cluster=self.in_cluster,
+                cluster_context=self.cluster_context,
+                config_file=self.config_file,
+            )
         # ensure clean slate before creating job
         task_instance = context["task_instance"]
         if task_instance.try_number == 1:
-            self.kube_launcher.delete(
-                yaml_obj, delete_failed=True, delete_completed=True
-            )
-        self.kube_launcher.apply(yaml_obj, extra_yaml_configuration)
-        self.kube_launcher.watch(yaml_obj)
+            self.kube_launcher.delete(delete_failed=True, delete_completed=True)
+        self.kube_launcher.apply()
+        self.kube_launcher.watch(
+            tail_logs_every=self.tail_logs_every,
+            tail_logs_line_count=self.tail_logs_line_count,
+            tail_logs_only_at_end=self.tail_logs_only_at_end,
+        )
         if self.delete_completed_job:
             logging.info(f"Cleaning up Job")
-            self.kube_launcher.delete(yaml_obj, delete_completed=True)
+            self.kube_launcher.delete(delete_completed=True)
 
         return rendered_template
