@@ -120,11 +120,11 @@ class KubernetesJobOperator(BaseOperator):
 
         yaml_obj = yaml.safe_load(rendered_template)
         extra_yaml_configuration = {"backoff_limit": retry_count}
-        kube_yaml = KubernetesJobYaml(yaml_obj, extra_yaml_configuration)
+        kjy = KubernetesJobYaml(yaml_obj, extra_yaml_configuration)
 
         if not self.kube_launcher:
             self.kube_launcher = KubernetesJobLauncher(
-                kube_yaml=kube_yaml.yaml,
+                kube_yaml=kjy.yaml,
                 in_cluster=self.in_cluster,
                 cluster_context=self.cluster_context,
                 config_file=self.config_file,
