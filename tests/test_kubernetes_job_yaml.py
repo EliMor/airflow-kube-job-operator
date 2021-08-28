@@ -4,11 +4,14 @@ import unittest
 import pathlib
 from airflow_kjo.kubernetes_job_launcher import KubernetesJobYaml
 
-class TestKubernetesJobYaml(unittest.TestCase):
 
+class TestKubernetesJobYaml(unittest.TestCase):
     def setUp(self) -> None:
-        job_yaml_path = str(pathlib.Path(__file__).parent.absolute()) + '/fixtures/test_valid_job.yaml'
-        with open(job_yaml_path, 'r') as infile:
+        job_yaml_path = (
+            str(pathlib.Path(__file__).parent.absolute())
+            + "/fixtures/test_valid_job.yaml"
+        )
+        with open(job_yaml_path, "r") as infile:
             job_yaml = infile.read()
         self.job_yaml = yaml.safe_load(job_yaml)
 
@@ -17,7 +20,10 @@ class TestKubernetesJobYaml(unittest.TestCase):
         assert kjy._validate_job_yaml(self.job_yaml) == True
 
     def test_expanded_job_yaml(self):
-        expected_fields = [("parallelism", "parallelism"), ("backoff_limit", "backoffLimit")]
+        expected_fields = [
+            ("parallelism", "parallelism"),
+            ("backoff_limit", "backoffLimit"),
+        ]
         expected_values = [3, 5]
         expectations = zip(expected_fields, expected_values)
         for exp_field_tuple, exp_value in expectations:
@@ -42,4 +48,3 @@ class TestKubernetesJobYaml(unittest.TestCase):
         expansion = {"parallelism": my_overwrite_value}
         kjy = KubernetesJobYaml(self.job_yaml, expansion, overwrite=True)
         assert kjy.yaml["spec"]["parallelism"] == my_overwrite_value
-
