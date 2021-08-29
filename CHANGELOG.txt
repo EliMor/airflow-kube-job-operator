@@ -1,5 +1,10 @@
 
 
+0.3.0 (Not released)
+Removed parameter "tail_logs_only_at_end", "tail_logs" will behave this way now.
+Clean up Kube yaml validator and kube launcher utility
+Make tail_log at an error state more intelligent, choose max(line_count, line where 'error' or 'fail' appears) 
+
 0.2.0
 Retry should be managed by kube, make sure that now task retry counts will clean the state of the job. 
 
