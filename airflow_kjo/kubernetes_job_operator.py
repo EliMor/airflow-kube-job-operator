@@ -5,6 +5,7 @@ import logging
 from airflow.models.baseoperator import BaseOperator
 from airflow_kjo.kubernetes_job_launcher import KubernetesJobLauncher, KubernetesJobYaml
 
+
 class KubernetesJobOperator(BaseOperator):
     """
     Opinionated operator for kubernetes Job type execution.
@@ -118,7 +119,7 @@ class KubernetesJobOperator(BaseOperator):
         self.kube_launcher.watch(
             tail_logs=self.tail_logs,
             tail_logs_every=self.tail_logs_every,
-            tail_logs_line_count=self.tail_logs_line_count
+            tail_logs_line_count=self.tail_logs_line_count,
         )
         if self.delete_completed_job:
             logging.info(f"Cleaning up Job")

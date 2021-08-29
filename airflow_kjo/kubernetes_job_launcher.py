@@ -32,7 +32,7 @@ class KubernetesJobYaml:
         """
         assert yaml["kind"] == "Job"
         restart_policy = yaml["spec"]["template"]["spec"]["restartPolicy"]
-        assert restart_policy in ('Never', 'OnFailure')
+        assert restart_policy in ("Never", "OnFailure")
         metadata = yaml["metadata"]
         metadata["name"]
         metadata["namespace"]
@@ -53,6 +53,7 @@ class KubernetesJobLauncherPodError(Exception):
     """
     Created Job ended in an errored pod state
     """
+
     ...
 
 
@@ -180,10 +181,7 @@ class KubernetesJobLauncher:
                     f'Job "{self.kube_yaml.name}" in Namespace "{self.kube_yaml.namespace}" ended in Error state'
                 )
             if bool(tail_logs_every):
-                if (
-                    total_time > 0
-                    and total_time % (tail_logs_every // sleep_time) == 0
-                ):
+                if total_time > 0 and total_time % (tail_logs_every // sleep_time) == 0:
                     logging.info(f"Beginning new log dump cycle :: {log_cycles}")
                     had_logs = self._tail_pod_logs(tail_logs_line_count)
                     no_logs_msg = (
