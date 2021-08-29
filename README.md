@@ -24,10 +24,9 @@ Here are the parameters.
 | yaml_write_path | If you want the rendered yaml file written, where should it be? | str |
 | yaml_write_filename | If you want the rendered yaml file written, what is the filename? | str |
 | yaml_template_fields | If you have variables in your yaml file you want filled out | dict 
-| tail_logs | Whether to output tail logs of the pods to airflow | bool |
+| tail_logs | Whether to output a log tail of the pods to airflow, will only do it at an end state | bool |
 | tail_logs_every | every x seconds to wait to begin a new log dump (nearest 5 sec) | int |
 | tail_logs_line_count | num of lines from end to output | int |
-| tail_logs_only_at_end | only do a tail when a job is Complete or Error | bool |
 | in_cluster | Whether or not Airflow has cluster permissions to create and manage Jobs | bool |
 | config_file | The path to the kube configfile | str |
 | cluster_context | If you are using a kube config file include the cluster context | str |
@@ -330,18 +329,9 @@ If you're using Kubernetes you should have a logging solution of some sort to ag
                                    tail_logs=True)
 ```
 
-If any of the below are set, 'tail_logs' does not need to be set.
+If any tail_logs* parameter is set, 'tail_logs' does not need to be set.
 
-2. Add 'tail_logs_only_at_end' to our task from above.
-```python
-    task_1 = KubernetesJobOperator(task_id='example_kubernetes_job_operator',
-                                   yaml_file_name='countdown_body.yaml.tmpl',
-                                   yaml_template_fields={'command': command},
-                                   in_cluster=True,
-                                   tail_logs_only_at_end=True)
-```
-
-3. Configure the behavior of the log tail
+2. Configure the behavior of the log tail
 ```python
     task_1 = KubernetesJobOperator(task_id='example_kubernetes_job_operator',
                                    yaml_file_name='countdown_body.yaml.tmpl',
