@@ -5,7 +5,6 @@ import logging
 from airflow.models.baseoperator import BaseOperator
 from airflow_kjo.kubernetes_job_launcher import KubernetesJobLauncher, KubernetesJobYaml
 
-
 class KubernetesJobOperator(BaseOperator):
     """
     Opinionated operator for kubernetes Job type execution.
@@ -61,7 +60,7 @@ class KubernetesJobOperator(BaseOperator):
         if bool(tail_logs_every) or bool(tail_logs):
             # set a default line count if they didnt provide one
             if not bool(tail_logs_line_count):
-                tail_logs_line_count = 20
+                tail_logs_line_count = 100
 
         self.tail_logs = tail_logs
         self.tail_logs_every = tail_logs_every
