@@ -58,16 +58,12 @@ class KubernetesJobOperator(BaseOperator):
         self.config_file = config_file
         self.cluster_context = cluster_context
 
-        self.tail_logs = tail_logs
-        if bool(tail_logs_every) or bool(tail_logs_line_count):
-            # set a default line count and consider case where client only gives the line count
+        if bool(tail_logs_every) or bool(tail_logs):
+            # set a default line count if they didnt provide one
             if not bool(tail_logs_line_count):
                 tail_logs_line_count = 20
 
-            # set a default cycle time if client wants logs to be tailed but didnt provide a cycle time
-            tail_logs_every = (
-                30 if not bool(tail_logs_every) else tail_logs_every
-            )
+        self.tail_logs = tail_logs
         self.tail_logs_every = tail_logs_every
         self.tail_logs_line_count = tail_logs_line_count
 
@@ -121,9 +117,9 @@ class KubernetesJobOperator(BaseOperator):
             self.kube_launcher.delete(delete_failed=True, delete_completed=True)
         self.kube_launcher.apply()
         self.kube_launcher.watch(
+            tail_logs=self.tail_logs,
             tail_logs_every=self.tail_logs_every,
-            tail_logs_line_count=self.tail_logs_line_count,
-            tail_logs=self.tail_logs
+            tail_logs_line_count=self.tail_logs_line_count
         )
         if self.delete_completed_job:
             logging.info(f"Cleaning up Job")
