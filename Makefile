@@ -9,7 +9,6 @@ build:
 	python3 setup.py sdist bdist_wheel
 
 push:
-	#package_cloud push verdigris/airflow dist/*${VERSION}.tar.gz
 	twine upload dist/*
 
 test:
