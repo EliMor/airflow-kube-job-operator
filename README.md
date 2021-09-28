@@ -1,20 +1,17 @@
 # Airflow Kubernetes Job Operator
 
 ## What is this?
-Airflow currently has a KubernetesPodOperator to kick off and manage pods. This is an excellent starting point but we wanted to achieve a few more things...
-
-1. We thought the writer of the Dag should not have to ever mess with the details of the python kubernetes package, creating python objects to render in kubernetes quickly gets too messy!
-2. We wanted an extension of how Airflow uses Jinja to be able to apply it to kubernetes yaml files. In other words, developers should be able to write yaml files as templates they could reuse across tasks or dags
-3. For Airflow, the Kubernetes Job type seems like a natural fit, it has recovery and parallelism built in and offloads more work to kubernetes. Less is more!
-
+An Airflow Operator that manages creation, watching, and deletion of a Kubernetes Job. It assumes the client passes in a path to a yaml file that may have Jinja templated fields. 
 
 ## Who is it for?
-This package makes the assumption that you're using Kubernetes somehow. But not only that, the principal idea here is that the best way to use Airflow is to bundle the business logic of your Airflow Tasks into an image that you deploy in a Kube Job. Why is this a good way to do things? We've found that Airflow can quickly get unruly if you conflate your business logic along with the execution flow. By forcing Airflow to only be used for managing your work (a fancy crontab) and not have to know anything about the work its managing, you free developers up to focus on just one thing at a time. You dont have to modify Airflow's requirements.txt to release your Dag if it's missing a dependency and you dont have developers running into each other touching the same codebase. 
+This package makes the assumption that you're using Kubernetes somehow. Airflow itself may be deployed in Kubernetes (in_cluster mode) or you may just want it to manage Jobs running remotely on a cluster (give Airflow a kube config).
 
-TLDR; Ideally this should be one of the only Airflow Operators you ever need! 
+## Why would I use this?
+In our use of Airflow we struggled a lot with binding our business logic via many different custom Operators and Plugins directly to Airflow. Instead, we found Airflow to be a great manager of execution of code but not the best tool for writing the ETL/ML code itself. 
+
+Ideally this should be one of the only Airflow Operators you need.
 
 ## How do I use it?
-Ok, that sounds great. Lets get to the meat.
 
 Here are the parameters.
 
@@ -311,9 +308,7 @@ It could be very useful to have an NFS to share the same filestore across pods f
 
 ## Logging
 
-Let's talk about logging. 
-
-If you're using Kubernetes you should have a logging solution of some sort to aggregate and provide searchability of all your logs. However, we recognize that it's very useful to have Airflow itself capture logs from your pods. So here are some use cases for forwarding the logs using the KJO.
+If you're using Kubernetes you should have a logging solution of some sort to aggregate and provide searchability of all your logs. However, here are some use cases for forwarding the logs using the KJO.
 
     1. I just want a simple tail of the logs, I don't care about extra behavior configuration
     2. I only want logs tailed out when the pods are in an end state; Completed, Errored
