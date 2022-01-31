@@ -21,13 +21,14 @@ Here are the parameters.
 | yaml_write_path | If you want the rendered yaml file written, where should it be? | str |
 | yaml_write_filename | If you want the rendered yaml file written, what is the filename? | str |
 | yaml_template_fields | If you have variables in your yaml file you want filled out | dict 
-| tail_logs | Whether to output a log tail of the pods to airflow, will only do it at an end state | bool |
+| tail_logs | Whether to output a log tail of the pods to airflow, will only do it at an end state | bool (F) |
 | tail_logs_every | every x seconds to wait to begin a new log dump (nearest 5 sec) | int |
 | tail_logs_line_count | num of lines from end to output | int |
-| in_cluster | Whether or not Airflow has cluster permissions to create and manage Jobs | bool |
+| log_yaml | Whether to log the rendered yaml | bool (T) |
+| in_cluster | Whether or not Airflow has cluster permissions to create and manage Jobs | bool (F) |
 | config_file | The path to the kube configfile | str |
 | cluster_context | If you are using a kube config file include the cluster context | str |
-| delete_completed_job | Autodelete Jobs that completed without errors | bool |
+| delete_completed_job | Autodelete Jobs that completed without errors | bool (F) |
 
 ### Step 1. Install the package
 ```sh

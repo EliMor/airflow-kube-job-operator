@@ -110,7 +110,7 @@ class KubernetesJobOperator(BaseOperator):
 
         if not self.kube_launcher:
             self.kube_launcher = KubernetesJobLauncher(
-                kube_yaml=kjy.yaml,
+                kube_yaml=kjy,
                 in_cluster=self.in_cluster,
                 cluster_context=self.cluster_context,
                 config_file=self.config_file,

@@ -14,7 +14,7 @@ from airflow_kjo.kubernetes_util import (
 class KubernetesJobYaml:
     def __init__(self, yaml, extra_configuration=None, overwrite=False):
         self._validate_job_yaml(yaml)
-        self.yaml = yaml
+        self.body = yaml
         if extra_configuration:
             self.yaml = self._expand_yaml_obj_with_configuration(
                 yaml, extra_configuration, overwrite
@@ -135,7 +135,7 @@ class KubernetesJobLauncher:
     def apply(self):
         try:
             self.kube_job_client.create_namespaced_job(
-                namespace=self.kube_yaml.namespace, body=self.kube_yaml
+                namespace=self.kube_yaml.namespace, body=self.kube_yaml.body
             )
         except ApiException as error:
             if error.status == 409:
