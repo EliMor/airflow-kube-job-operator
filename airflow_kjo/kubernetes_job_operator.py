@@ -21,6 +21,7 @@ class KubernetesJobOperator(BaseOperator):
     :param tail_logs: should logs be output at the end, has some default behavior for simple usage
     :param tail_logs_every: frequency to output logs (seconds)
     :param tail_logs_line_count: num lines from end to output
+    :param log_yaml: log the rendered yaml file for the kube job defaults to true
     :param delete_completed_jobs: should completed jobs be autodeleted
     :param kube_launcher: pass in your own kube launcher if you're testing or brave
     """
@@ -41,6 +42,7 @@ class KubernetesJobOperator(BaseOperator):
         tail_logs=False,
         tail_logs_every=None,
         tail_logs_line_count=None,
+        log_yaml=True,
         ##
         delete_completed_job=False,
         kube_launcher=None,
@@ -66,6 +68,7 @@ class KubernetesJobOperator(BaseOperator):
         self.tail_logs = tail_logs
         self.tail_logs_every = tail_logs_every
         self.tail_logs_line_count = tail_logs_line_count
+        self.log_yaml = log_yaml
 
         self.delete_completed_job = delete_completed_job
         self.kube_launcher = kube_launcher
@@ -95,7 +98,8 @@ class KubernetesJobOperator(BaseOperator):
             template = self._retrieve_template_from_file(jinja_env)
 
         rendered_template = template.render(**self.yaml_template_fields)
-        logging.info(f"Rendered....\n{rendered_template}")
+        if self.log_yaml:
+            logging.info(f"Rendered....\n{rendered_template}")
 
         if self.yaml_write_path:
             self._write_rendered_template(rendered_template)
