@@ -1,5 +1,7 @@
 # Airflow Kubernetes Job Operator
 
+>  Note! Airflow has added a KJO officially since this project started; https://github.com/apache/airflow/pull/36847
+
 ## What is this?
 An Airflow Operator that manages creation, watching, and deletion of a Kubernetes Job. It assumes the client passes in a path to a yaml file that may have Jinja templated fields. 
 
